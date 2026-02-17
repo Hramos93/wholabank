@@ -1,0 +1,39 @@
+// frontend/src/api/axiosConfig.js
+
+import axios from 'axios';
+
+// Creamos una instancia centralizada de Axios LOCALLLLL
+//const api = axios.create({
+//    baseURL: 'http://127.0.0.1:8000/api/', // La URL de tu Django
+//    headers: {
+//        'Content-Type': 'application/json',
+//    }
+//});
+
+const api = axios.create({
+    // Usa la variable de Render en la nube, o localhost si estás programando en casa
+    baseURL: import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api/',
+    headers: {
+        'Content-Type': 'application/json',
+    }
+});
+
+
+// INTERCEPTOR: Se ejecuta antes de cada petición
+// Su función es inyectar el Token automáticamente si existe.
+api.interceptors.request.use(
+    (config) => {
+        const token = localStorage.getItem('access_token');
+        if (token) {
+            // Si hay token, lo agregamos al header Authorization
+            // Formato estándar: "Bearer <token>"
+            config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+    },
+    (error) => {
+        return Promise.reject(error);
+    }
+);
+
+export default api;
