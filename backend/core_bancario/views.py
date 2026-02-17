@@ -5,10 +5,13 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from django.db import transaction
 from django.contrib.auth.models import User  # <--- CRUCIAL: Faltaba esto seguramente
-from django.conf import settings # Para importar configuraciones
+from django.conf import settings  # Para importar configuraciones
 import requests
-from rest_framework.permissions import IsAdminUser # <--- IMPORTANTE
+from rest_framework.permissions import IsAdminUser  # <--- IMPORTANTE
+import logging
 
+# Configurar un logger para esta vista
+logger = logging.getLogger(__name__)
 
 # Importamos tus modelos y serializadores
 from .models import Cliente, Cuenta, Tarjeta, Comercio, Directorio, Transaccion
@@ -105,8 +108,10 @@ class RegistroClienteView(APIView):
                 }, status=status.HTTP_201_CREATED)
 
         except Exception as e:
-            print(f"Error 500: {str(e)}")
-            return error_response("IERROR_REG_99", f"Error interno: {str(e)}", status.HTTP_500_INTERNAL_SERVER_ERROR)
+            # Usamos logger para registrar el error detallado en los logs del servidor
+            logger.error(f"Error 500 en RegistroClienteView: {str(e)}", exc_info=True)
+            # Devolvemos un mensaje genérico al usuario por seguridad
+            return error_response("IERROR_REG_99", "Ocurrió un error interno durante el registro. Por favor, intente más tarde.", status.HTTP_500_INTERNAL_SERVER_ERROR)
 # ============================================================================
 # VISTA 2: PROCESAR PAGO COMERCIO (ROL ADQUIRIENTE - SPRINT 2)
 # El comercio nos manda la tarjeta para cobrar.

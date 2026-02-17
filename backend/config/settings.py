@@ -179,8 +179,3 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 MI_CODIGO_BANCO = "0001"    # Código de nuestro banco (dígitos 1-4 de la cuenta)
 MI_CODIGO_AGENCIA = "0001"  # Código de nuestra agencia principal (dígitos 5-8 de la cuenta)
 MI_BIN_TARJETA = "00001"    # BIN de nuestras tarjetas (dígitos 2-6)
-
-# --- CONFIGURACIONES PERSONALIZADAS DE LA APP ---
-MI_CODIGO_BANCO = "0001"    # Código de nuestro banco (dígitos 1-4 de la cuenta)
-MI_CODIGO_AGENCIA = "0001"  # Código de nuestra agencia principal (dígitos 5-8 de la cuenta)
-MI_BIN_TARJETA = "00001"    # BIN de nuestras tarjetas (dígitos 2-6)

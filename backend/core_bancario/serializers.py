@@ -9,6 +9,16 @@ class TarjetaSerializer(serializers.ModelSerializer):
         # Solo enviamos campos necesarios al frontend, ocultamos IDs internos si no son necesarios
         fields = ['numero', 'fecha_vencimiento', 'cvv', 'estado']
 
+class CuentaSerializer(serializers.ModelSerializer):
+    tarjetas = TarjetaSerializer(many=True, read_only=True)
+    
+    # Agregamos un campo calculado para que se vea bonito en el JSON
+    tipo_texto = serializers.CharField(source='get_tipo_cuenta_display', read_only=True)
+
+    class Meta:
+        model = Cuenta
+        fields = ['numero_cuenta', 'saldo', 'tipo_cuenta', 'tipo_texto', 'tarjetas']
+
 class DashboardSerializer(serializers.ModelSerializer):
     """
     Serializador personalizado para la vista principal del usuario.
@@ -42,13 +52,3 @@ class AutorizacionBancoSerializer(serializers.Serializer):
     codigo_banco_comercio_receptor = serializers.CharField()
     numero_cuenta_comercio_receptor = serializers.CharField() # Nota que este campo cambia respecto al anterior
     monto_pagado = serializers.DecimalField(max_digits=15, decimal_places=2)
-
-class CuentaSerializer(serializers.ModelSerializer):
-    tarjetas = TarjetaSerializer(many=True, read_only=True)
-    
-    # Agregamos un campo calculado para que se vea bonito en el JSON
-    tipo_texto = serializers.CharField(source='get_tipo_cuenta_display', read_only=True)
-
-    class Meta:
-        model = Cuenta
-        fields = ['numero_cuenta', 'saldo', 'tipo_cuenta', 'tipo_texto', 'tarjetas']
