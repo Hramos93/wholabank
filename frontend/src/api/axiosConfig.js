@@ -30,6 +30,9 @@ api.interceptors.request.use(
             // Formato estándar: "Bearer <token>"
             config.headers.Authorization = `Bearer ${token}`;
         }
-        return config;
-    }
+return config;
+  }
 );
+
+// AGREGA ESTA LÍNEA AL FINAL:
+export default api;
