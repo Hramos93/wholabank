@@ -26,18 +26,17 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-default-key-for-dev')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-# DEBUG se establece en False en producción. Azure lo gestiona con la variable de entorno WEBSITE_HOSTNAME.
-DEBUG = 'WEBSITE_HOSTNAME' not in os.environ
+# En Render, la variable de entorno 'RENDER' se establece en 'true'.
+# DEBUG será True localmente y False en producción.
+DEBUG = 'RENDER' not in os.environ
 
 # Los hosts permitidos se leen de una variable de entorno.
-ALLOWED_HOSTS = [
-    'wholabank.onrender.com',
-    'wholabank-1.onrender.com',
-    'wholabank-front.onrender.com',
-    'localhost',
-    '127.0.0.1',
-]
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
+RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
+if RENDER_EXTERNAL_HOSTNAME:
+    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
+    
 # Application definition
 
 INSTALLED_APPS = [
@@ -52,6 +51,7 @@ INSTALLED_APPS = [
     'rest_framework',           # Habilita la API
     'rest_framework_simplejwt', # Habilita la autenticación por tokens
     'corsheaders',              # Habilita conexiones desde otros dominios (React)
+    'whitenoise',               # Para servir archivos estáticos en producción
     
     # --- MIS APLICACIONES ---
     'core_bancario',            # Nuestra lógica del banco
@@ -174,3 +174,8 @@ STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 # Configuración para WhiteNoise
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+# --- CONFIGURACIONES PERSONALIZADAS DE LA APP ---
+MI_CODIGO_BANCO = "0001"    # Código de nuestro banco (dígitos 1-4 de la cuenta)
+MI_CODIGO_AGENCIA = "0001"  # Código de nuestra agencia principal (dígitos 5-8 de la cuenta)
+MI_BIN_TARJETA = "00001"    # BIN de nuestras tarjetas (dígitos 2-6)

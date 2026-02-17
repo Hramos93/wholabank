@@ -9,14 +9,6 @@ class TarjetaSerializer(serializers.ModelSerializer):
         # Solo enviamos campos necesarios al frontend, ocultamos IDs internos si no son necesarios
         fields = ['numero', 'fecha_vencimiento', 'cvv', 'estado']
 
-class CuentaSerializer(serializers.ModelSerializer):
-    # Serializador anidado: Incluye las tarjetas dentro de la información de la cuenta
-    tarjetas = TarjetaSerializer(many=True, read_only=True)
-    
-    class Meta:
-        model = Cuenta
-        fields = ['numero_cuenta', 'saldo', 'tarjetas']
-
 class DashboardSerializer(serializers.ModelSerializer):
     """
     Serializador personalizado para la vista principal del usuario.

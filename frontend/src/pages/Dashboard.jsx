@@ -79,35 +79,19 @@ const Dashboard = () => {
                             <div key={cuenta.numero_cuenta} className="space-y-6">
                                 
                                 {/* Tarjeta de Saldo (Cuenta) */}
-                                <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-4">
+                                <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                                     <div className="flex items-center gap-4 w-full">
-                                        <div className="bg-blue-100 p-3 rounded-full text-blue-900">
+                                        <div className={`p-3 rounded-full ${cuenta.tipo_cuenta === 'CORRIENTE' ? 'bg-blue-100 text-blue-900' : 'bg-green-100 text-green-900'}`}>
                                             <Wallet size={24} />
                                         </div>
                                         <div>
-                                            {/* Tarjeta de Saldo (Cuenta) */}
-                                            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-4">
-                                                <div className="flex items-center gap-4 w-full">
-                                                    <div className={`p-3 rounded-full ${cuenta.tipo_cuenta === 'CORRIENTE' ? 'bg-blue-100 text-blue-900' : 'bg-green-100 text-green-900'}`}>
-                                                        <Wallet size={24} />
-                                                    </div>
-                                                    <div>
-                                                        {/* AQUÍ USAMOS EL DATO DINÁMICO */}
-                                                        <p className="text-gray-500 text-xs font-bold uppercase tracking-wider">
-                                                            Cuenta {cuenta.tipo_texto || 'Corriente'}
-                                                        </p>
-                                                        <p className="text-gray-800 font-mono text-sm">{cuenta.numero_cuenta}</p>
-                                                    </div>
-                                                </div>
-                                                <div className="text-right w-full sm:w-auto">
-                                                    <p className="text-gray-400 text-xs mb-1">Saldo Disponible</p>
-                                                    <p className="text-3xl font-bold text-blue-900">Bs. {cuenta.saldo}</p>
-                                                </div>
-                                            </div> 
+                                            <p className="text-gray-500 text-xs font-bold uppercase tracking-wider">
+                                                Cuenta {cuenta.tipo_texto || 'Corriente'}
+                                            </p>
                                             <p className="text-gray-800 font-mono text-sm">{cuenta.numero_cuenta}</p>
                                         </div>
                                     </div>
-                                    <div className="text-right w-full sm:w-auto">
+                                    <div className="text-right w-full sm:w-auto mt-4 sm:mt-0">
                                         <p className="text-gray-400 text-xs mb-1">Saldo Disponible</p>
                                         <p className="text-3xl font-bold text-blue-900">Bs. {cuenta.saldo}</p>
                                     </div>

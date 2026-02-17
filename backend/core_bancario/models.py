@@ -7,11 +7,7 @@ from django.contrib.auth.models import User
 import random
 from datetime import datetime
 from dateutil.relativedelta import relativedelta # Necesitarás: pip install python-dateutil
-
-# --- CONSTANTES DE IDENTIDAD (NOSOTROS SOMOS BANCO_1) ---
-CODIGO_BANCO = "0001"    # Digitos 1-4 de la cuenta
-CODIGO_AGENCIA = "0001"  # Digitos 5-8 de la cuenta (Agencia Principal)
-BIN_TARJETA = "00001"    # Digitos 2-6 de la tarjeta (Asignado a BANCO_1)
+from django.conf import settings
 
 class Cliente(models.Model):
     TIPO_PERSONA_CHOICES = (
@@ -64,7 +60,7 @@ class Cuenta(models.Model):
             while not unique:
                 # 1. Definir Estructura Venezolana
                 # Banco (0001) + Agencia (0001) + Control (00)
-                prefix = f"{CODIGO_BANCO}{CODIGO_AGENCIA}00" 
+                prefix = f"{settings.MI_CODIGO_BANCO}{settings.MI_CODIGO_AGENCIA}00" 
                 
                 # 2. Generar 10 dígitos aleatorios
                 unique_id = str(random.randint(1, 9999999999)).zfill(10)
@@ -95,7 +91,7 @@ class Tarjeta(models.Model):
             industry = "5"
             
             # 2. BIN/IIN (5): Identificador de nuestro banco (00001)
-            bin_code = BIN_TARJETA
+            bin_code = settings.MI_BIN_TARJETA
             
             # 3. Cuenta Individual (9 dígitos aleatorios)
             account_id = str(random.randint(1, 999999999)).zfill(9)
@@ -183,4 +179,3 @@ class Transaccion(models.Model):
     def __str__(self):
         return f"{self.tipo} - {self.monto} - {self.estado}"
     
-
