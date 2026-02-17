@@ -30,7 +30,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-default-key-for-dev')
 DEBUG = 'WEBSITE_HOSTNAME' not in os.environ
 
 # Los hosts permitidos se leen de una variable de entorno.
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+ALLOWED_HOSTS = os.environ.get('wholabank.onrender.com','wholabank-1.onrender.com','wholabank-front.onrender.com','ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 if 'WEBSITE_HOSTNAME' in os.environ:
     ALLOWED_HOSTS.append(os.environ['WEBSITE_HOSTNAME'])
 
