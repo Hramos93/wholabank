@@ -79,6 +79,8 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173", # Para tus pruebas locales con Vite
 ]
 
+CSRF_TRUSTED_ORIGINS = ["https://wholabank-front.onrender.com"]
+
 # --- CONFIGURACIÓN DE DRF (Django Rest Framework) ---
 REST_FRAMEWORK = {
     # Definimos que la autenticación por defecto sea vía JWT (Tokens)
