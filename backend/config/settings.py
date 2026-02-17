@@ -121,19 +121,20 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 
 # Database
-# https://docs.djangoproject.com/en/6.0/ref/settings/#databases
+DATABASES = {
+    'default': dj_database_url.config(
+        # Render inyectará DATABASE_URL automáticamente
+        default=os.environ.get('DATABASE_URL'),
+        conn_max_age=600
+    )
+}
 
-if 'DATABASE_URL' in os.environ:
-    # Configuración para producción en Azure (usando PostgreSQL o MySQL)
-    DATABASES = {
-        'default': dj_database_url.config(conn_max_age=600, ssl_require=True)
+# Fallback para seguir usando SQLite en tu laptop sin internet
+if not DATABASES['default']:
+    DATABASES['default'] = {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
-else:
-    # Configuración para desarrollo local (SQLite)
-    DATABASES = {
-        'default': {'ENGINE': 'django.db.backends.sqlite3', 'NAME': BASE_DIR / 'db.sqlite3'}
-    }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
