@@ -55,13 +55,15 @@ INSTALLED_APPS = [
     
     # --- MIS APLICACIONES ---
     'core_bancario',            # Nuestra lógica del banco
+
+
 ]
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware', 
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     # WhiteNoise para servir archivos estáticos en producción
-    'whitenoise.middleware.WhiteNoiseMiddleware',
-    'corsheaders.middleware.CorsMiddleware', 
+    'whitenoise.middleware.WhiteNoiseMiddleware',    
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -72,8 +74,10 @@ MIDDLEWARE = [
 # --- CONFIGURACIÓN DE CORS (Conexión Frontend-Backend) ---
 # Definimos quién tiene permiso de hablar con nuestro banco.
 # En producción, lee las URLs permitidas desde una variable de entorno.
-CORS_ALLOWED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS', 'http://localhost:5173,http://localhost:3000').split(',')
-
+CORS_ALLOWED_ORIGINS = [
+    "https://wholabank-front.onrender.com",
+    "http://localhost:5173", # Para tus pruebas locales con Vite
+]
 
 # --- CONFIGURACIÓN DE DRF (Django Rest Framework) ---
 REST_FRAMEWORK = {
