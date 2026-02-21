@@ -8,6 +8,7 @@ from django.db.models import Sum
 from django.contrib.auth.models import User  # <--- CRUCIAL: Faltaba esto seguramente
 from django.conf import settings  # Para importar configuraciones
 import requests
+from django.http import JsonResponse
 from rest_framework.permissions import IsAdminUser  # <--- IMPORTANTE
 import logging
 from rest_framework import serializers
@@ -28,6 +29,17 @@ def error_response(code, message, http_status=status.HTTP_404_NOT_FOUND):
             "message": message
         }
     }, status=http_status)
+
+# ============================================================================
+# VISTA 0: HEALTH CHECK PARA RENDER
+# ============================================================================
+def health_check(request):
+    """
+    Vista simple que devuelve un 200 OK.
+    Se usa para el Health Check de Render.
+    """
+    return JsonResponse({"status": "ok", "message": "Servicio activo"})
+
 
 # ============================================================================
 # VISTA 1: DASHBOARD CLIENTE (SPRINT 1)
