@@ -17,10 +17,18 @@ const Login = () => {
         setLoading(true);
 
         try {
+            // La API ahora devuelve { access, refresh, is_admin, username }
             const response = await api.post('token/', { username, password });
             localStorage.setItem('access_token', response.data.access);
             localStorage.setItem('refresh_token', response.data.refresh);
-            navigate('/dashboard');
+
+            // ===== LÓGICA DE REDIRECCIÓN INTELIGENTE =====
+            if (response.data.is_admin) {
+                // Si es admin, lo mandamos a su panel de React
+                navigate('/admin'); 
+            } else {
+                navigate('/dashboard'); // Si es cliente, al dashboard normal
+            }
         } catch (err) {
             console.error(err);
             setError('Usuario o contraseña incorrectos.');

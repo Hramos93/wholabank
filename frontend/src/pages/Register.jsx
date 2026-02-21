@@ -197,7 +197,7 @@ const Register = () => {
                                                 type="number" name="cedula"
                                                 value={formData.cedula} onChange={handleChange}
                                                 className="w-full mt-1 p-3 border border-gray-300 rounded-lg outline-none focus:border-blue-900"
-                                                placeholder="12345678"
+                                                placeholder="Ej: 20123456 (sin V-)"
                                             />
                                             <ErrorMsg msg={errors.cedula} />
                                         </div>
@@ -213,7 +213,7 @@ const Register = () => {
                                             type="text" name="rif"
                                             value={formData.rif} onChange={handleChange}
                                             className="w-full mt-1 p-3 border border-gray-300 rounded-lg outline-none focus:border-blue-900"
-                                            placeholder="J-12345678-9"
+                                            placeholder="Ej: J-12345678-9"
                                         />
                                         <ErrorMsg msg={errors.rif} />
                                     </div>
@@ -226,7 +226,7 @@ const Register = () => {
                                     type="text" name="telefono"
                                     value={formData.telefono} onChange={handleChange}
                                     className="w-full mt-1 p-3 border border-gray-300 rounded-lg outline-none focus:border-blue-900"
-                                    placeholder="0414..."
+                                    placeholder="Ej: 04141234567"
                                 />
                                 <ErrorMsg msg={errors.telefono} />
                             </div>

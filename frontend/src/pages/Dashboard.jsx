@@ -148,6 +148,22 @@ const Dashboard = () => {
                     {/* === COLUMNA DERECHA (Accesos Rápidos) === */}
                     <div className="space-y-6">
                         
+                        {/* === PANEL DE ADMIN (CONDICIONAL) === */}
+                        {data.is_admin && (
+                            <div className="bg-gradient-to-r from-blue-800 to-indigo-900 rounded-2xl p-6 text-white shadow-lg border border-blue-700">
+                                <h3 className="font-bold text-lg mb-2">Panel de Administrador</h3>
+                                <p className="text-sm opacity-90 mb-4">Accede a las herramientas de gestión del banco.</p>
+                                <a 
+                                    href="/admin/" 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="bg-white text-indigo-700 text-sm font-bold py-2 px-4 rounded-full shadow-md hover:bg-gray-100 transition-colors w-full text-center inline-block"
+                                >
+                                    Ir al Admin
+                                </a>
+                            </div>
+                        )}
+
                         {/* Menú de Acciones */}
                         <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
                             <h3 className="text-gray-800 font-bold mb-4">Operaciones Rápidas</h3>

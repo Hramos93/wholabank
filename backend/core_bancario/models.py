@@ -179,3 +179,15 @@ class Transaccion(models.Model):
     def __str__(self):
         return f"{self.tipo} - {self.monto} - {self.estado}"
     
+# --- MODELO PROXY PARA LINK EN ADMIN ---
+class AdminDashboardProxy(Cliente):
+    """
+    Modelo proxy que no crea una tabla en la DB.
+    Se usa para registrar un link en el panel de admin de Django
+    que redirige a nuestra vista de dashboard personalizada.
+    """
+    class Meta:
+        proxy = True
+        verbose_name = 'Panel de Control del Banco'
+        verbose_name_plural = 'Panel de Control del Banco'
+    

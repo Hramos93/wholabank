@@ -20,6 +20,7 @@ class Migration(migrations.Migration):
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('codigo', models.CharField(help_text='Ej: 0002 para Banco 2', max_length=10, unique=True)),
                 ('nombre', models.CharField(help_text='Ej: BANCO_2', max_length=50)),
+                ('rif', models.CharField(blank=True, help_text='J-12345678-9', max_length=20, null=True)),
                 ('tipo', models.CharField(choices=[('BANCO', 'Banco'), ('COMERCIO', 'Comercio')], max_length=10)),
                 ('api_url', models.URLField(help_text='Endpoint base del equipo. Ej: http://192.168.1.50:8000/api/')),
             ],

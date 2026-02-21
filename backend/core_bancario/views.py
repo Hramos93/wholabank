@@ -2,20 +2,23 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
-from django.db import transaction
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from django.db import models
+from django.db.models import Sum
 from django.contrib.auth.models import User  # <--- CRUCIAL: Faltaba esto seguramente
 from django.conf import settings  # Para importar configuraciones
 import requests
 from rest_framework.permissions import IsAdminUser  # <--- IMPORTANTE
 import logging
+from rest_framework import serializers
 
 # Configurar un logger para esta vista
 logger = logging.getLogger(__name__)
 
 # Importamos tus modelos y serializadores
 from .models import Cliente, Cuenta, Tarjeta, Comercio, Directorio, Transaccion
-from .serializers import DashboardSerializer, PagoComercioSerializer, AutorizacionBancoSerializer
+from .serializers import (DashboardSerializer, PagoComercioSerializer, AutorizacionBancoSerializer, 
+                          RegistroClienteSerializer, MyTokenObtainPairSerializer)
 
 # --- UTILERÍA PARA RESPUESTAS DE ERROR (ESTÁNDAR) ---
 def error_response(code, message, http_status=status.HTTP_404_NOT_FOUND):
@@ -40,73 +43,40 @@ class DashboardView(APIView):
         except Cliente.DoesNotExist:
             return Response({"error": "Cliente no encontrado"}, status=404)
 
+# --- VISTA DE LOGIN PERSONALIZADA ---
+from rest_framework_simplejwt.views import TokenObtainPairView
+
+class MyTokenObtainPairView(TokenObtainPairView):
+    """
+    Vista de login personalizada que devuelve si el usuario es admin.
+    """
+    serializer_class = MyTokenObtainPairSerializer
 
 
-# --- VISTA 2: REGISTRO DE CLIENTES (LA QUE ESTÁ FALLANDO) ---
+
+# --- VISTA 2: REGISTRO DE CLIENTES (REFACTORIZADA) ---
 class RegistroClienteView(APIView):
     permission_classes = [] 
 
     def post(self, request):
-        data = request.data
-        tipo = data.get('tipo_persona', 'NATURAL') # Recibimos el tipo
-        
-        # Validaciones de Usuario
-        if User.objects.filter(username=data.get('username')).exists():
-            return error_response("IERROR_REG_01", "El nombre de usuario ya existe.", status.HTTP_400_BAD_REQUEST)
-
-        # Validaciones según tipo
-        if tipo == 'NATURAL':
-            if not data.get('cedula'):
-                return error_response("IERROR_REG_02", "La cédula es obligatoria para personas.", status.HTTP_400_BAD_REQUEST)
-            if Cliente.objects.filter(cedula=data.get('cedula')).exists():
-                return error_response("IERROR_REG_03", "Esta cédula ya está registrada.", status.HTTP_400_BAD_REQUEST)
-            
-            # Auto-generar RIF Natural si no viene
-            rif_final = data.get('rif') or f"V-{data['cedula']}"
-
-        else: # JURIDICO
-            if not data.get('rif'):
-                return error_response("IERROR_REG_04", "El RIF es obligatorio para empresas.", status.HTTP_400_BAD_REQUEST)
-            if Cliente.objects.filter(rif=data.get('rif')).exists():
-                return error_response("IERROR_REG_05", "Este RIF Jurídico ya está registrado.", status.HTTP_400_BAD_REQUEST)
-            
-            rif_final = data['rif'] # El RIF viene tal cual (J-123456)
+        serializer = RegistroClienteSerializer(data=request.data)
 
         try:
-            with transaction.atomic():
-                # 1. Crear Usuario (Login)
-                user = User.objects.create_user(
-                    username=data['username'],
-                    email=data['email'],
-                    password=data['password'],
-                    first_name=data['nombre_completo'] # En empresas será la Razón Social
-                )
+            serializer.is_valid(raise_exception=True)
+            # El método create del serializador se encarga de toda la lógica de negocio
+            # y de las transacciones de base de datos.
+            created_data = serializer.save() # .save() llama a .create() o .update()
 
-                # 2. Crear Cliente
-                cliente = Cliente.objects.create(
-                    user=user,
-                    tipo_persona=tipo,
-                    cedula=data.get('cedula') if tipo == 'NATURAL' else None, # Null si es empresa
-                    rif=rif_final,
-                    telefono=data['telefono'],
-                    fecha_nacimiento=data.get('fecha_nacimiento'), # Fecha Constitución
-                    lugar_nacimiento=data.get('lugar_nacimiento', 'Venezuela'),
-                    estado_civil=data.get('estado_civil') if tipo == 'NATURAL' else None,
-                    profesion=data.get('profesion', 'Comercio'), # Rubro
-                    origen_fondos=data.get('origen_fondos', 'Actividad Comercial')
-                )
+            return Response({
+                "message": "Registro exitoso",
+                "cuenta": created_data['cuenta'].numero_cuenta,
+                "tarjeta": created_data['tarjeta'].numero
+            }, status=status.HTTP_201_CREATED)
 
-                # 3. Crear Cuenta y Tarjeta
-                tipo_cuenta_sel = data.get('tipo_cuenta', 'CORRIENTE')
-                cuenta = Cuenta.objects.create(cliente=cliente, tipo_cuenta=tipo_cuenta_sel)
-                tarjeta = Tarjeta.objects.create(cuenta=cuenta)
-
-                return Response({
-                    "message": "Registro exitoso",
-                    "cuenta": cuenta.numero_cuenta,
-                    "tarjeta": tarjeta.numero
-                }, status=status.HTTP_201_CREATED)
-
+        except serializers.ValidationError as e:
+            # DRF maneja automáticamente el formato de los errores de validación
+            return Response(e.detail, status=status.HTTP_400_BAD_REQUEST)
+        
         except Exception as e:
             # Usamos logger para registrar el error detallado en los logs del servidor
             logger.error(f"Error 500 en RegistroClienteView: {str(e)}", exc_info=True)
@@ -291,42 +261,41 @@ class AdminDashboardView(APIView):
     permission_classes = [IsAdminUser] # Solo usuarios con is_staff=True
 
     def get(self, request):
-        # 1. Resumen de Clientes
-        clientes = Cliente.objects.all().select_related('user')
+        # 1. Resumen de Clientes (Optimizado con agregaciones y prefetch)
+        clientes_qs = Cliente.objects.select_related('user').prefetch_related(
+            models.Prefetch('cuentas', queryset=Cuenta.objects.all())
+        ).annotate(
+            saldo_total=Sum('cuentas__saldo')
+        )
+
         lista_clientes = []
-        
-        total_dinero = 0
-        
-        for c in clientes:
-            # Obtenemos sus cuentas
-            cuentas = c.cuentas.all()
-            saldo_total_cliente = sum(cta.saldo for cta in cuentas)
-            total_dinero += saldo_total_cliente
-            
+        for c in clientes_qs:
             lista_clientes.append({
                 "id": c.id,
                 "nombre": f"{c.user.first_name} {c.user.last_name}",
                 "identidad": c.rif or c.cedula,
                 "tipo": c.tipo_persona,
-                "saldo_total": saldo_total_cliente,
-                "cuentas": [cta.numero_cuenta for cta in cuentas]
+                "saldo_total": c.saldo_total or 0,
+                "cuentas": [cta.numero_cuenta for cta in c.cuentas.all()] # Usa datos prefetched
             })
 
         # 2. Directorio (OTROS BANCOS Y COMERCIOS)
         directorio = Directorio.objects.all().values('codigo', 'nombre', 'tipo', 'api_url')
 
-        # 3. Métricas
+        # 3. Métricas (Optimizadas con agregaciones de la DB)
+        liquidez_total = Cuenta.objects.aggregate(total=Sum('saldo'))['total'] or 0
+
         stats = {
-            "total_clientes": clientes.count(),
+            "total_clientes": clientes_qs.count(),
             "total_bancos_conectados": Directorio.objects.filter(tipo='BANCO').count(),
             "total_comercios_externos": Directorio.objects.filter(tipo='COMERCIO').count(),
-            "liquidez_total": total_dinero
+            "liquidez_total": liquidez_total
         }
 
         return Response({
             "stats": stats,
             "clientes": lista_clientes,
-            "directorio": directorio
+            "directorio": list(directorio) # Convertir a lista para serialización
         })
     
 # ============================================================================

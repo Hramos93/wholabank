@@ -121,19 +121,21 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 
 # Database
-DATABASES = {
-    'default': dj_database_url.config(
-        # Render inyectará DATABASE_URL automáticamente
-        default=os.environ.get('DATABASE_URL'),
-        conn_max_age=600
-    )
-}
+DATABASE_URL = os.environ.get('DATABASE_URL')
 
-# Fallback para seguir usando SQLite en tu laptop sin internet
-if not DATABASES['default']:
-    DATABASES['default'] = {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+if DATABASE_URL:
+    # Configuración para producción (ej. PostgreSQL en Render).
+    # dj_database_url.config() leerá automáticamente la variable DATABASE_URL.
+    DATABASES = {
+        'default': dj_database_url.config(conn_max_age=600)
+    }
+else:
+    # Configuración para desarrollo local (SQLite) si DATABASE_URL no está definida.
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
     }
 
 # Password validation
