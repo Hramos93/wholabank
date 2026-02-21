@@ -127,7 +127,12 @@ if DATABASE_URL:
     # Configuración para producción (ej. PostgreSQL en Render).
     # dj_database_url.config() leerá automáticamente la variable DATABASE_URL.
     DATABASES = {
-        'default': dj_database_url.config(conn_max_age=600)
+        'default': dj_database_url.config(
+            # conn_max_age=0 cierra la conexión al final de cada request.
+            # Es la configuración más segura para evitar errores de hilos en Render/Gunicorn.
+            conn_max_age=0,
+            ssl_require='RENDER' in os.environ # Forzar SSL en Render para conexiones externas
+        )
     }
 else:
     # Configuración para desarrollo local (SQLite) si DATABASE_URL no está definida.
