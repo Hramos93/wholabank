@@ -24,14 +24,26 @@ if [ $MIGRATE_STATUS -ne 0 ]; then
     }
 fi
 
-# Recolecta todos los archivos estáticos (React, etc.) en la carpeta STATIC_ROOT y verifica el éxito
+# --- MANEJO DE ARCHIVOS ESTÁTICOS (FRONTEND) ---
+
+# 1. Verificar que los archivos del frontend existen antes de continuar.
+FRONTEND_ASSETS_DIR="../frontend/dist/assets"
+echo "Verificando el directorio de assets del frontend: $FRONTEND_ASSETS_DIR"
+if [ ! -d "$FRONTEND_ASSETS_DIR" ] || [ -z "$(ls -A $FRONTEND_ASSETS_DIR)" ]; then
+    echo "Error: El directorio de assets del frontend ($FRONTEND_ASSETS_DIR) no existe o está vacío."
+    echo "Asegúrate de que el build del frontend (ej. 'npm run build') se haya completado antes de desplegar."
+    exit 1
+fi
+echo "Directorio de assets del frontend encontrado."
+
+# 2. Recolecta todos los archivos estáticos (React, etc.) en la carpeta STATIC_ROOT
 echo "Iniciando collectstatic..."
-python manage.py collectstatic --noinput || {
-    echo "Error: collectstatic falló. Asegúrate de que el build de React se haya ejecutado correctamente."
+python manage.py collectstatic --noinput --clear || {
+    echo "Error: collectstatic falló."
     exit 1
 }
 echo "collectstatic completado. Contenido de STATIC_ROOT:"
-ls -la staticfiles/ # Lista el contenido de la carpeta staticfiles dentro del directorio 'backend'
+ls -lR staticfiles/ # Lista el contenido de la carpeta staticfiles de forma recursiva
 
 # Crea el superusuario (el script interno comprueba si ya existe)
 python manage.py create_superuser
