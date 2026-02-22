@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# El script se ejecuta desde la raíz del proyecto.
-# Navegamos al directorio 'backend' donde está manage.py.
+# El script de inicio de Azure se ejecuta desde la raíz del proyecto.
+# Navegamos al directorio 'backend' donde se encuentran manage.py y el resto del código de Django.
 cd backend
 
 # Ejecuta las migraciones de la base de datos
