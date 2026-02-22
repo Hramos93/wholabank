@@ -11,10 +11,10 @@ import axios from 'axios';
 //});
 
 const api = axios.create({
-    // Usa la variable de Render en la nube, o localhost si estás programando en casa
-    // En producción, el frontend y el backend están en el mismo dominio.
-    // La URL base de la API es simplemente '/api/'.
-    baseURL: '/api/',
+    // Usa la variable de entorno VITE_API_URL para la URL base de la API.
+    // En producción, esta variable debe contener la URL del backend en Azure.
+    // En desarrollo, se usará la URL del archivo .env.
+    baseURL: import.meta.env.VITE_API_URL || '/api/',
     headers: {
         'Content-Type': 'application/json',
     }
