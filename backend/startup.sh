@@ -1,7 +1,8 @@
 #!/bin/bash
 
-# Navega al directorio del backend donde está manage.py
-cd /home/site/wwwroot/backend
+# El script se ejecuta desde la raíz del proyecto.
+# Navegamos al directorio 'backend' donde está manage.py.
+cd backend
 
 # Ejecuta las migraciones de la base de datos
 python manage.py migrate --noinput
