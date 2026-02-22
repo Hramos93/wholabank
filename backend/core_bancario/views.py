@@ -4,13 +4,12 @@ from django.views.generic import TemplateView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
-from django.db import models
+from django.db import models, transaction
 from django.db.models import Sum
 from django.contrib.auth.models import User  # <--- CRUCIAL: Faltaba esto seguramente
 from django.conf import settings  # Para importar configuraciones
 import requests
 from django.http import JsonResponse
-from rest_framework.permissions import IsAdminUser  # <--- IMPORTANTE
 import logging
 from rest_framework import serializers
 
