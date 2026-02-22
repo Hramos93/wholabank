@@ -24,6 +24,15 @@ if [ $MIGRATE_STATUS -ne 0 ]; then
     }
 fi
 
+# Recolecta todos los archivos estáticos (React, etc.) en la carpeta STATIC_ROOT y verifica el éxito
+echo "Iniciando collectstatic..."
+python manage.py collectstatic --noinput || {
+    echo "Error: collectstatic falló. Asegúrate de que el build de React se haya ejecutado correctamente."
+    exit 1
+}
+echo "collectstatic completado. Contenido de STATIC_ROOT:"
+ls -la staticfiles/ # Lista el contenido de la carpeta staticfiles dentro del directorio 'backend'
+
 # Crea el superusuario (el script interno comprueba si ya existe)
 python manage.py create_superuser
 
