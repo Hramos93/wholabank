@@ -1,0 +1,17 @@
+# --- Core de Django y API ---
+Django
+djangorestframework
+
+# --- Autenticación y Seguridad ---
+djangorestframework-simplejwt
+django-cors-headers
+
+# --- Servidor de Producción y Base de Datos ---
+gunicorn
+dj-database-url
+psycopg2-binary
+whitenoise
+
+# --- Utilidades ---
+python-dateutil
+requests

@@ -12,8 +12,9 @@ import axios from 'axios';
 
 const api = axios.create({
     // Usa la variable de Render en la nube, o localhost si estás programando en casa
-   // baseURL: import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api/',
-    baseURL: (import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api').replace(/\/$/, "") + '/',
+    // En producción, el frontend y el backend están en el mismo dominio.
+    // La URL base de la API es simplemente '/api/'.
+    baseURL: '/api/',
     headers: {
         'Content-Type': 'application/json',
     }

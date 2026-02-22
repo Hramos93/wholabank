@@ -1,8 +1,8 @@
 # backend/config/urls.py
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path, include, re_path
 # Importamos nuestras vistas personalizadas
-from core_bancario.views import MyTokenObtainPairView, health_check
+from core_bancario.views import MyTokenObtainPairView, health_check, FrontendAppView
 from rest_framework_simplejwt.views import TokenRefreshView
 
 urlpatterns = [
@@ -17,4 +17,7 @@ urlpatterns = [
     
     # AQUÍ se conectan tus rutas. Fíjate que diga 'api/'
     path('api/', include('core_bancario.urls')),
+
+    # RUTA CATCH-ALL: Cualquier otra ruta que no sea de la API será manejada por React.
+    re_path(r'^.*$', FrontendAppView.as_view(), name='frontend_app'),
 ]

@@ -1,5 +1,6 @@
 # backend/core_bancario/views.py
 from rest_framework.views import APIView
+from django.views.generic import TemplateView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
@@ -40,6 +41,15 @@ def health_check(request):
     """
     return JsonResponse({"status": "ok", "message": "Servicio activo"})
 
+
+# ============================================================================
+# VISTA PARA SERVIR LA APP DE REACT
+# ============================================================================
+class FrontendAppView(TemplateView):
+    """
+    Sirve el index.html de React para cualquier ruta que no sea de la API.
+    """
+    template_name = 'index.html'
 
 # ============================================================================
 # VISTA 1: DASHBOARD CLIENTE (SPRINT 1)

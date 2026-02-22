@@ -26,17 +26,16 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-default-key-for-dev')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-# En Render, la variable de entorno 'RENDER' se establece en 'true'.
-# DEBUG será True localmente y False en producción.
-DEBUG = 'RENDER' not in os.environ
+# En Azure, definiremos DJANGO_ENV=production. DEBUG será True localmente y False en producción.
+DEBUG = os.environ.get('DJANGO_ENV') != 'production'
 
 # Los hosts permitidos se leen de una variable de entorno.
 ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
-RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
-if RENDER_EXTERNAL_HOSTNAME:
-    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
-    
+AZURE_APP_HOSTNAME = os.environ.get('WEBSITE_HOSTNAME')
+if AZURE_APP_HOSTNAME:
+    ALLOWED_HOSTS.append(AZURE_APP_HOSTNAME)
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -61,9 +60,9 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware', 
     'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
     # WhiteNoise para servir archivos estáticos en producción
-    'whitenoise.middleware.WhiteNoiseMiddleware',    
+    'whitenoise.middleware.WhiteNoiseMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -71,15 +70,11 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-# --- CONFIGURACIÓN DE CORS (Conexión Frontend-Backend) ---
-# Definimos quién tiene permiso de hablar con nuestro banco.
-# En producción, lee las URLs permitidas desde una variable de entorno.
-CORS_ALLOWED_ORIGINS = [
-    "https://wholabank-front.onrender.com",
-    "http://localhost:5173", # Para tus pruebas locales con Vite
-]
-
-CSRF_TRUSTED_ORIGINS = ["https://wholabank-front.onrender.com"]
+# --- CONFIGURACIÓN DE CORS ---
+# Solo necesario para el desarrollo local, ya que en producción todo viene del mismo dominio.
+if DEBUG:
+    CORS_ALLOWED_ORIGINS = ["http://localhost:5173"]
+    CSRF_TRUSTED_ORIGINS = ["http://localhost:5173"]
 
 # --- CONFIGURACIÓN DE DRF (Django Rest Framework) ---
 REST_FRAMEWORK = {
@@ -105,7 +100,9 @@ ROOT_URLCONF = 'config.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        # Le decimos a Django que busque templates en la carpeta de build de React.
+        # Esto es para que pueda encontrar y servir el 'index.html' principal.
+        'DIRS': [os.path.join(BASE_DIR, '..', 'frontend', 'dist')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -131,7 +128,7 @@ if DATABASE_URL:
             # conn_max_age=0 cierra la conexión al final de cada request.
             # Es la configuración más segura para evitar errores de hilos en Render/Gunicorn.
             conn_max_age=0,
-            ssl_require='RENDER' in os.environ # Forzar SSL en Render para conexiones externas
+            ssl_require=True # Azure PostgreSQL siempre requiere SSL para conexiones externas
         )
     }
 else:
@@ -178,8 +175,13 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = '/static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles'
-# Configuración para WhiteNoise
+# Directorio donde `collectstatic` pondrá todos los archivos estáticos para producción.
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+# Directorios adicionales de donde `collectstatic` debe copiar archivos.
+# Aquí le decimos que tome los assets (CSS, JS) de la build de React.
+STATICFILES_DIRS = [os.path.join(BASE_DIR, '..', 'frontend', 'dist', 'assets')]
+
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # --- CONFIGURACIONES PERSONALIZADAS DE LA APP ---
