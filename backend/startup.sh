@@ -10,19 +10,8 @@ cd "$SCRIPT_DIR" || exit
 echo "Cambiado al directorio: $(pwd)"
 
 # Ejecuta las migraciones de la base de datos
-# Intenta aplicar las migraciones. Si falla, intenta "fake" la migración problemática.
+# Se asegura de que la base de datos esté actualizada con el esquema más reciente.
 python manage.py migrate --noinput
-MIGRATE_STATUS=$?
-
-if [ $MIGRATE_STATUS -ne 0 ]; then
-    echo "Error al aplicar migraciones (código de salida: $MIGRATE_STATUS). Intentando faking de core_bancario.0002_directorio_rif..."
-    # Asumiendo que '0002_directorio_rif' es la migración que falla por columna duplicada.
-    # Esto marca la migración como aplicada sin ejecutar el SQL.
-    python manage.py migrate core_bancario 0002_directorio_rif --fake || {
-        echo "Fallo al faking de core_bancario.0002_directorio_rif. Reintentando todas las migraciones."
-        python manage.py migrate --noinput
-    }
-fi
 
 # --- MANEJO DE ARCHIVOS ESTÁTICOS (FRONTEND) ---
 
@@ -50,4 +39,11 @@ python manage.py create_superuser
 
 # Inicia el servidor Gunicorn
 # El directorio de trabajo ya es 'backend', por lo que Gunicorn encontrará 'config.wsgi'.
-gunicorn config.wsgi:application --bind 0.0.0.0:8000
+# Se recomienda usar workers de tipo 'gthread' para operaciones I/O y configurar el número de workers.
+# WEB_CONCURRENCY es una variable que Azure puede establecer. Si no, usamos un valor por defecto.
+# Para un plan B1/S1 de Azure (1 core), 3 workers es un buen comienzo.
+gunicorn config.wsgi:application --bind 0.0.0.0:8000 \
+    --workers ${WEB_CONCURRENCY:-3} \
+    --threads 4 \
+    --worker-class=gthread \
+    --log-level=info
