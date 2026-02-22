@@ -195,7 +195,7 @@ class ProcesarPagoComercioView(APIView):
                 "fecha_vencimiento_tarjeta": data['fecha_vencimiento_tarjeta'],
                 "codigo_banco_comercio_receptor": data['codigo_banco_comercio_receptor'],
                 "numero_cuenta_comercio_receptor": comercio.cuenta.numero_cuenta, # DATO CLAVE
-                "monto_pagado": float(data['monto_pagado'])
+                "monto_pagado": data['monto_pagado'] # Eliminamos float() para preservar la precisión de Decimal
             }
 
             # Enviar Request con Timeout

@@ -76,13 +76,9 @@ const AdminPanel = () => {
                                 + Registrar Banco
                             </button>
                                 <span className="text-xs bg-blue-100 text-blue-800 px-2 py-2 rounded-full font-bold flex items-center">
-                                Nodos: {data.directorio.length}
+                                Nodos Detectados: {data.directorio.length}
                                 </span>
                         </div>
-
-                        <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-bold">
-                            Nodos Detectados: {data.directorio.length}
-                        </span>
                     </div>
                     
                     <div className="overflow-x-auto">

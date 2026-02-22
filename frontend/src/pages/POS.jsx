@@ -47,7 +47,8 @@ const POS = () => {
 
     // Armamos el JSON tal cual lo pide el protocolo del Sprint 2
     const payload = {
-      numero_transaccion: `TX-${Date.now()}`, // Generamos ID único por timestamp
+      // ID de transacción más robusto para evitar colisiones. Idealmente, lo genera el backend.
+      numero_transaccion: `TX-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
       codigo_banco_emisor_tarjeta: formData.codigo_banco_emisor_tarjeta,
       numero_tarjeta: formData.numero_tarjeta,
       cvc_tarjeta: formData.cvc_tarjeta,
