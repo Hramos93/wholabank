@@ -48,4 +48,4 @@ Azure App Service debe configurarse para ejecutar los siguientes comandos durant
 3.  **Crear superusuario (solo la primera vez)**: `python manage.py create_superuser`
 4.  **Iniciar el servidor Gunicorn**: `gunicorn config.wsgi`
 
-#probando
+#probando mueve mueve
