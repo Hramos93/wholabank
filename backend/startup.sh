@@ -43,6 +43,7 @@ python manage.py create_superuser
 # WEB_CONCURRENCY es una variable que Azure puede establecer. Si no, usamos un valor por defecto.
 # Para un plan B1/S1 de Azure (1 core), 3 workers es un buen comienzo.
 gunicorn config.wsgi:application --bind 0.0.0.0:8000 \
+    --chdir /tmp/8de728b18be5148/backend \
     --workers ${WEB_CONCURRENCY:-3} \
     --threads 4 \
     --worker-class=gthread \
