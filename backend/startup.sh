@@ -1,6 +1,12 @@
 #!/bin/bash
 # Script de inicio robusto para Azure App Service
 
+echo "--- INICIO DEL SCRIPT DE INICIO ---"
+echo "Directorio de trabajo actual: $(pwd)"
+echo "Listando contenido del directorio padre (raíz del proyecto):"
+ls -lR ..
+echo "-------------------------------------"
+
 # Obtiene el directorio donde se encuentra este script (que es 'backend')
 # y cambia el directorio de trabajo a ese lugar.
 # Esto hace que el script funcione sin importar desde dónde se le llame.
