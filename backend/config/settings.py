@@ -179,15 +179,18 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
-STATIC_URL = '/static/'
+STATIC_URL = '/assets/'
 # Directorio donde `collectstatic` pondrá todos los archivos estáticos para producción.
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # Directorios adicionales de donde `collectstatic` debe copiar archivos.
 # Aquí le decimos que tome los assets (CSS, JS) de la build de React.
-STATICFILES_DIRS = [os.path.join(BASE_DIR, '..', 'frontend', 'dist', 'assets')]
+STATICFILES_DIRS = [os.path.join(BASE_DIR, '..', 'frontend', 'dist')]
 
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+WHITENOISE_ROOT = os.path.join(BASE_DIR, '..', 'frontend', 'dist')
+
 
 # --- CONFIGURACIONES PERSONALIZADAS DE LA APP ---
 MI_CODIGO_BANCO = os.environ.get("MI_CODIGO_BANCO", "0001")

@@ -14,7 +14,7 @@ python manage.py migrate --noinput
 # Recolecta todos los archivos estáticos (React, etc.) en la carpeta STATIC_ROOT.
 # La opción --noinput evita prompts y --clear asegura una recolección limpia.
 echo "Ejecutando collectstatic..."
-python manage.py collectstatic --noinput --clear
+python manage.py collectstatic --noinput
 
 # Crea el superusuario (el script interno comprueba si ya existe para no duplicarlo).
 echo "Asegurando la existencia del superusuario..."
