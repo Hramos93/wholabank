@@ -76,10 +76,14 @@ MIDDLEWARE = [
 ]
 
 # --- CONFIGURACIÓN DE CORS ---
-# Solo necesario para el desarrollo local, ya que en producción todo viene del mismo dominio.
+# Se ajusta según el entorno (desarrollo o producción).
 if DEBUG:
     CORS_ALLOWED_ORIGINS = ["http://localhost:5173"]
     CSRF_TRUSTED_ORIGINS = ["http://localhost:5173"]
+else:
+    # En producción, solo permitimos nuestro propio frontend.
+    CORS_ALLOWED_ORIGINS = ["https://wholabank-app-fghqdsdrb5f6a4bw.canadacentral-01.azurewebsites.net"]
+    CSRF_TRUSTED_ORIGINS = ["https://wholabank-app-fghqdsdrb5f6a4bw.canadacentral-01.azurewebsites.net"]
 
 # --- CONFIGURACIÓN DE DRF (Django Rest Framework) ---
 REST_FRAMEWORK = {
