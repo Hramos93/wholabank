@@ -30,10 +30,15 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-default-key-for-dev')
 DEBUG = os.environ.get('DJANGO_ENV') != 'production'
 
 # Los hosts permitidos se leen de una variable de entorno.
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    'wholabank-app-fghqdsdrb5f6a4bw.canadacentral-01.azurewebsites.net', # Host explícito de la App en Azure
+]
 
+# Añade dinámicamente el hostname que Azure provee, por si cambia.
 AZURE_APP_HOSTNAME = os.environ.get('WEBSITE_HOSTNAME')
-if AZURE_APP_HOSTNAME:
+if AZURE_APP_HOSTNAME and AZURE_APP_HOSTNAME not in ALLOWED_HOSTS:
     ALLOWED_HOSTS.append(AZURE_APP_HOSTNAME)
 
 # Application definition
@@ -121,13 +126,13 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASE_URL = os.environ.get('DATABASE_URL')
 
 if DATABASE_URL:
-    # Configuración para producción (ej. PostgreSQL en Render).
+    # Configuración para producción (ej. PostgreSQL en Azure).
     # dj_database_url.config() leerá automáticamente la variable DATABASE_URL.
     DATABASES = {
         'default': dj_database_url.config(
-            # conn_max_age=0 cierra la conexión al final de cada request.
-            # Es la configuración más segura para evitar errores de hilos en Render/Gunicorn.
-            conn_max_age=0,
+            # Habilitamos conexiones persistentes para mejorar el rendimiento.
+            # Se reutilizarán las conexiones durante 60 segundos.
+            conn_max_age=60,
             ssl_require=True # Azure PostgreSQL siempre requiere SSL para conexiones externas
         )
     }

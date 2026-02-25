@@ -21,9 +21,15 @@ echo "Asegurando la existencia del superusuario..."
 python manage.py create_superuser
 
 # Inicia el servidor Gunicorn para producción.
-echo "Iniciando servidor Gunicorn..."
+
+echo "Iniciando servidor Gunicorn con timeout extendido..."
+
 gunicorn config.wsgi:application --bind 0.0.0.0:8000 \
-    --workers ${WEB_CONCURRENCY:-3} \
-    --threads 4 \
-    --worker-class=gthread \
-    --log-level=info
+
+    --workers 2 \
+
+    --timeout 600 \
+
+    --log-level=info \
+
+    --error-logfile /home/LogFiles/gunicorn_error.log
