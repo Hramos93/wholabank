@@ -14,7 +14,11 @@ lerna-debug.log*
 /venv/
 /.venv/
 /env/
-/.env
+
+# Variables de entorno - Ignorar todos los archivos .env excepto los de ejemplo
+**/.env
+**/.env.*
+!**/.env.example
 
 # Bases de datos locales
 *.sqlite3
