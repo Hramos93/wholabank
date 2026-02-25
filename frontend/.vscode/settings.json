@@ -1,0 +1,4 @@
+{
+    "appService.defaultWebAppToDeploy": "/subscriptions/ddc38b03-b28c-4a2d-8f89-7ad80bf725d0/resourceGroups/WholaBank-rg/providers/Microsoft.Web/sites/wholabank-app",
+    "appService.deploySubpath": "."
+}

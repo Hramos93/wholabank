@@ -1,0 +1,41 @@
+# Archivos de sistema operativo y Logs
+.DS_Store
+Thumbs.db
+/logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Entornos virtuales de Python
+/antenv/
+/venv/
+/.venv/
+/env/
+/.env
+
+# Bases de datos locales
+*.sqlite3
+*.db
+
+# Artefactos de Python
+/__pycache__/
+/*.pyc
+/*.pyo
+/*.pyd
+/build/
+/dist/
+/*.egg-info/
+
+# Archivos de configuración de IDEs
+/.idea/
+# Excluir todo en .vscode, excepto las extensiones recomendadas
+.vscode/*
+!.vscode/extensions.json
+
+# Dependencias y artefactos de frontend
+/frontend/node_modules/
+/frontend/dist/
+*.local
