@@ -11,11 +11,10 @@ import axios from 'axios';
 //});
 
 const api = axios.create({
-    // Se usa una ruta relativa para la URL base. Esto funciona tanto en
-    // desarrollo (con el proxy de Vite) como en producción, ya que el frontend
-    // y el backend se sirven desde el mismo dominio. El navegador lo resuelve a
-    // https://[dominio-actual]/api/.
-    baseURL: '/api/',
+    // Usa la variable de entorno VITE_API_URL para la URL base de la API.
+    // En producción, esta variable debe contener la URL del backend en Azure.
+    // En desarrollo, se usará la URL del archivo .env.
+    baseURL: import.meta.env.VITE_API_URL || '/api/',
     headers: {
         'Content-Type': 'application/json',
     }
