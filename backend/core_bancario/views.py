@@ -3,7 +3,7 @@ from rest_framework.views import APIView
 from django.views.generic import TemplateView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
 from django.db import models, transaction
 from django.db.models import Sum
 from django.contrib.auth.models import User  # <--- CRUCIAL: Faltaba esto seguramente
@@ -77,7 +77,7 @@ class MyTokenObtainPairView(TokenObtainPairView):
 
 # --- VISTA 2: REGISTRO DE CLIENTES (REFACTORIZADA) ---
 class RegistroClienteView(APIView):
-    permission_classes = [] 
+    permission_classes = [AllowAny] 
 
     def post(self, request):
         serializer = RegistroClienteSerializer(data=request.data)

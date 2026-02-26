@@ -26,13 +26,14 @@ const api = axios.create({
 api.interceptors.request.use(
     (config) => {
         const token = localStorage.getItem('access_token');
-        if (token) {
+        // Solo añade el token si existe Y la URL no es la de registro.
+        if (token && !config.url.includes('registro/')) {
             // Si hay token, lo agregamos al header Authorization
             // Formato estándar: "Bearer <token>"
             config.headers.Authorization = `Bearer ${token}`;
         }
-return config;
-  }
+        return config;
+    }
 );
 
 // AGREGA ESTA LÍNEA AL FINAL:
