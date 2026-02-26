@@ -20,14 +20,46 @@ python manage.py collectstatic --noinput
 echo "Asegurando la existencia del superusuario..."
 python manage.py create_superuser
 
-# Inicia el servidor Gunicorn para producción.
+# Inicia el servidor Gunicorn en segundo plano.
 
-echo "Iniciando servidor Gunicorn con timeout extendido..."
+echo "Iniciando servidor Gunicorn en segundo plano con preload..."
+
+
 
 gunicorn config.wsgi:application --bind 0.0.0.0:8000 \
+
     --workers 2 \
+
     --preload \
+
     --timeout 600 \
+
     --log-level=info \
 
-    --error-logfile /home/LogFiles/gunicorn_error.log
+    --error-logfile /home/LogFiles/gunicorn_error.log &
+
+
+
+# Guardar el ID del proceso de Gunicorn
+
+GUNICORN_PID=$!
+
+
+
+# Ejecutar el script de calentamiento para esperar a que la app esté lista.
+
+# El script está en el directorio raíz, un nivel por encima de 'backend'.
+
+echo "Ejecutando script de calentamiento..."
+
+/bin/bash ../warmup.sh
+
+
+
+# Esperar a que el proceso de Gunicorn termine.
+
+# Esto asegura que el contenedor no se cierre mientras Gunicorn se ejecuta.
+
+wait $GUNICORN_PID
+
+
