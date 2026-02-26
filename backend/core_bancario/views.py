@@ -99,6 +99,10 @@ class RegistroClienteView(APIView):
             return Response(e.detail, status=status.HTTP_400_BAD_REQUEST)
         
         except Exception as e:
+            # Para depuración en producción, imprimimos directamente a la consola
+            # para que sea visible en los logs en tiempo real de Azure.
+            print(f"ERROR CRÍTICO EN REGISTRO: {str(e)}")
+            
             # Usamos logger para registrar el error detallado en los logs del servidor
             logger.error(f"Error 500 en RegistroClienteView: {str(e)}", exc_info=True)
             # Devolvemos un mensaje genérico al usuario por seguridad
