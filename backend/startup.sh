@@ -25,11 +25,9 @@ python manage.py create_superuser
 echo "Iniciando servidor Gunicorn con timeout extendido..."
 
 gunicorn config.wsgi:application --bind 0.0.0.0:8000 \
-
     --workers 2 \
-
+    --preload \
     --timeout 600 \
-
     --log-level=info \
 
     --error-logfile /home/LogFiles/gunicorn_error.log

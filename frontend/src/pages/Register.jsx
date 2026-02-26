@@ -114,8 +114,10 @@ const Register = () => {
         setPasswordStrength(score);
     };
 
-    const handleSubmit = async () => {
+    const handleSubmit = async (retryCount = 0) => {
         setLoading(true);
+        const MAX_RETRIES = 1; // Intentará el original + 1 reintento
+
         try {
             await api.post('registro/', formData);
             Swal.fire({
@@ -125,10 +127,22 @@ const Register = () => {
                 confirmButtonColor: '#1e3a8a'
             }).then(() => navigate('/login'));
         } catch (error) {
-            const msg = error.response?.data?.error?.message || error.message;
+            // Si el error es un timeout o de red y no hemos superado los reintentos
+            if ((!error.response) && retryCount < MAX_RETRIES) {
+                console.log(`Error de red o timeout. Reintentando... (Intento ${retryCount + 1})`);
+                // Espera 2 segundos antes de reintentar
+                setTimeout(() => handleSubmit(retryCount + 1), 2000);
+                return; // Evita que se ejecute el resto del catch
+            }
+
+            const msg = error.response?.data?.error?.message || 'No se pudo conectar con el servidor. Por favor, intente más tarde.';
             Swal.fire({ icon: 'error', title: 'Error', text: msg });
+            setLoading(false); // Solo detenemos el loading si el error es definitivo
         } finally {
-            setLoading(false);
+            // No detenemos el loading si estamos en un ciclo de reintento
+            if (retryCount >= MAX_RETRIES) {
+                setLoading(false);
+            }
         }
     };
 

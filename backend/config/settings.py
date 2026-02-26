@@ -135,8 +135,8 @@ if DATABASE_URL:
     DATABASES = {
         'default': dj_database_url.config(
             # Habilitamos conexiones persistentes para mejorar el rendimiento.
-            # Se reutilizarán las conexiones durante 60 segundos.
-            conn_max_age=60,
+            # Se reutilizarán las conexiones durante 10 minutos (600 segundos).
+            conn_max_age=600,
             ssl_require=True # Azure PostgreSQL siempre requiere SSL para conexiones externas
         )
     }
