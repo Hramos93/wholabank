@@ -1,7 +1,7 @@
 # backend/core_bancario/serializers.py
 
 from rest_framework import serializers
-from .models import Cliente, Cuenta, Tarjeta
+from .models import Cliente, Cuenta, Tarjeta, Transaccion
 from django.contrib.auth.models import User
 from django.db import transaction
 from .models import Comercio
@@ -127,7 +127,18 @@ class RegistroClienteSerializer(serializers.Serializer):
             cuenta = Cuenta.objects.create(cliente=cliente, tipo_cuenta=tipo_cuenta_sel)
             tarjeta = Tarjeta.objects.create(cuenta=cuenta)
 
-            # 4. Si es Jurídico, afiliarlo como Comercio automáticamente
+            # 4. Registrar la transacción del bono de bienvenida
+            Transaccion.objects.create(
+                tipo='TRANSFERENCIA', # Opcional: Podrías añadir 'BONO' a TIPO_CHOICES en el modelo
+                monto=1000.00,
+                cuenta_destino=cuenta,
+                estado='APROBADO',
+                codigo_respuesta='00', # Código para transacciones internas exitosas
+                banco_emisor_id='WholaBank', # Identificador para nuestro propio banco
+                mensaje_error='Bono de Bienvenida'
+            )
+
+            # 5. Si es Jurídico, afiliarlo como Comercio automáticamente
             if tipo == 'JURIDICO':
                 codigo_comercio = f"C-{rif_final}"
                 Comercio.objects.create(
