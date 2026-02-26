@@ -123,8 +123,11 @@ class RegistroClienteSerializer(serializers.Serializer):
             )
 
             # 3. Crear Cuenta y Tarjeta
-            tipo_cuenta_sel = validated_data.get('tipo_cuenta', 'CORRIENTE')
-            cuenta = Cuenta.objects.create(cliente=cliente, tipo_cuenta=tipo_cuenta_sel)
+            # Al no pasar 'saldo', Django aplica el default=1000.00 del modelo automáticamente.
+            cuenta = Cuenta.objects.create(
+                cliente=cliente, 
+                tipo_cuenta=validated_data.get('tipo_cuenta', 'CORRIENTE')
+            )
             tarjeta = Tarjeta.objects.create(cuenta=cuenta)
 
             # 4. Registrar la transacción del bono de bienvenida

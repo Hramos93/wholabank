@@ -9,6 +9,8 @@ echo "Directorio de trabajo actual: $(pwd)"
 
 # Ejecuta las migraciones de la base de datos para asegurar que el esquema esté actualizado.
 echo "Ejecutando migraciones de base de datos..."
+# Generamos el archivo de migración para detectar el cambio de default=1000.00
+python manage.py makemigrations
 python manage.py migrate --noinput
 
 # Recolecta todos los archivos estáticos (React, etc.) en la carpeta STATIC_ROOT.
@@ -61,5 +63,3 @@ echo "Ejecutando script de calentamiento..."
 # Esto asegura que el contenedor no se cierre mientras Gunicorn se ejecuta.
 
 wait $GUNICORN_PID
-
-
