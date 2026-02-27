@@ -18,6 +18,9 @@ from django.utils.decorators import method_decorator
 # Configurar un logger para esta vista
 logger = logging.getLogger(__name__)
 
+# Constante segura para el código del banco, con fallback.
+MI_BANCO_DEFAULT = getattr(settings, 'MI_CODIGO_BANCO', '0001')
+
 # Importamos tus modelos y serializadores
 from .models import Cliente, Cuenta, Tarjeta, Comercio, Directorio, Transaccion
 from .serializers import (DashboardSerializer, PagoComercioSerializer, AutorizacionBancoSerializer, 
@@ -136,7 +139,7 @@ class ProcesarPagoComercioView(APIView):
         # 2. Determinar si la tarjeta es MÍA (On-Us) o AJENA (Off-Us)
         banco_emisor_code = data['codigo_banco_emisor_tarjeta']
 
-        if banco_emisor_code == settings.MI_CODIGO_BANCO:
+        if banco_emisor_code == MI_BANCO_DEFAULT:
             # --- PROCESAMIENTO INTERNO (Nosotros somos el emisor también) ---
             return self.procesar_pago_interno(data, comercio)
         else:
@@ -194,7 +197,7 @@ class ProcesarPagoComercioView(APIView):
         try:
             # 1. Buscar banco en directorio
             banco_destino = Directorio.objects.get(codigo=codigo_banco_destino, tipo='BANCO')
-            url_destino = f"{banco_destino.api_url}autorizar_pago/" 
+            url_destino = f"{banco_destino.api_url.rstrip('/')}/autorizar_pago/"
             
             # 2. Preparar Payload (Casteo estricto a float para JSON)
             payload_banco = {
