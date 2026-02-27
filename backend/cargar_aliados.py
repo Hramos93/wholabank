@@ -16,7 +16,7 @@ def cargar_datos():
         print("ℹ️ La tabla Directorio no está vacía. Se omite la carga masiva inicial.")
         return
 
-    csv_file = 'directorio.csv'
+    csv_file = 'directorio.txt'
     if not os.path.exists(csv_file):
         print(f"Error: No se encuentra el archivo {csv_file}")
         return

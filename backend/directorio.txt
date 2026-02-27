@@ -1,0 +1,5 @@
+codigo,nombre,tipo,api_url,rif
+BANCO_2,Meridian Banco,BANCO,https://kvbgtjbxycqaqcymbdyk.supabase.co/functions/v1/meridian_bank_api,J-00000000-0
+BANCO_5,Banco Progreso Financiero,BANCO,https://api.banprofi.site/api/pagos/,J-46773781-4
+COMERCIO_3,Mercadillo Autoparts,COMERCIO,https://ecomers-post.vercel.app/,J-29753187-4
+COMERCIO_4,Franelix,COMERCIO,https://franelix.vercel.app/,J-98765432-1
