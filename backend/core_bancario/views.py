@@ -12,6 +12,8 @@ import requests
 from django.http import JsonResponse
 import logging
 from rest_framework import serializers
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
 
 # Configurar un logger para esta vista
 logger = logging.getLogger(__name__)
@@ -111,9 +113,10 @@ class RegistroClienteView(APIView):
 # VISTA 2: PROCESAR PAGO COMERCIO (ROL ADQUIRIENTE - SPRINT 2)
 # El comercio nos manda la tarjeta para cobrar.
 # ============================================================================
+@method_decorator(csrf_exempt, name='dispatch')
 class ProcesarPagoComercioView(APIView):
-    # No requiere Auth por Token porque simula un Datáfono público
-    permission_classes = [] 
+    # Requiere Auth por Token (Seguridad reforzada para interoperabilidad)
+    permission_classes = [IsAuthenticated]
 
     def post(self, request):
         serializer = PagoComercioSerializer(data=request.data)
