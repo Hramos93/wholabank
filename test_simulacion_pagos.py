@@ -84,7 +84,7 @@ def run_audit():
             "monto_pagado": monto
         }
         
-        resp_pago = requests.post(f"{BASE_URL}/procesar_pago/", json=payload_pago)
+        resp_pago = requests.post(f"{BASE_URL}/procesar_pago_comercio/", headers=headers, json=payload_pago)
         
         if resp_pago.status_code == 201:
             print(f"    Compra #{i}: -${monto} [EXITOSA]")
