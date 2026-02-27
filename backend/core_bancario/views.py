@@ -128,6 +128,10 @@ class ProcesarPagoComercioView(APIView):
 
         data = serializer.validated_data
         
+        # Limpieza del número de tarjeta: eliminar espacios en blanco para procesar.
+        if 'numero_tarjeta' in data:
+            data['numero_tarjeta'] = data['numero_tarjeta'].replace(' ', '')
+
         # VALIDACIÓN TEMPRANA: Asegurar que la petición es para nuestro banco.
         codigo_banco_receptor = data.get('codigo_banco_comercio_receptor')
         if codigo_banco_receptor != MI_BANCO_DEFAULT:
