@@ -128,6 +128,11 @@ class ProcesarPagoComercioView(APIView):
 
         data = serializer.validated_data
         
+        # VALIDACIÓN TEMPRANA: Asegurar que la petición es para nuestro banco.
+        codigo_banco_receptor = data.get('codigo_banco_comercio_receptor')
+        if codigo_banco_receptor != MI_BANCO_DEFAULT:
+            return error_response("IERROR_1007", "Error: Llamando a mi endpoint con otro banco")
+
         # 1. Validar que el comercio existe y es nuestro cliente (Adquiriencia)
         try:
             comercio = Comercio.objects.get(codigo_identificador=data['codigo_identificador_comercio_receptor'])
