@@ -190,50 +190,54 @@ class ProcesarPagoComercioView(APIView):
              return error_response("IERROR_1005", "Error: No se encontró ninguna tarjeta con los datos provistos.")
 
     def enrutar_pago_externo(self, data, comercio, codigo_banco_destino):
-        """ Lógica para reenviar la petición al Banco B """
+        """ Lógica blindada para interoperabilidad (Off-Us) """
         try:
-            # Buscar la URL del banco en el Directorio
+            # 1. Buscar banco en directorio
             banco_destino = Directorio.objects.get(codigo=codigo_banco_destino, tipo='BANCO')
             url_destino = f"{banco_destino.api_url}autorizar_pago/" 
             
-            # Transformar payload: El banco destino necesita el NÚMERO DE CUENTA del comercio
+            # 2. Preparar Payload (Casteo estricto a float para JSON)
             payload_banco = {
-                "numero_transaccion": data['numero_transaccion'],
-                "codigo_banco_emisor_tarjeta": data['codigo_banco_emisor_tarjeta'],
-                "numero_tarjeta": data['numero_tarjeta'],
-                "cvc_tarjeta": data['cvc_tarjeta'],
-                "fecha_vencimiento_tarjeta": data['fecha_vencimiento_tarjeta'],
-                "codigo_banco_comercio_receptor": data['codigo_banco_comercio_receptor'],
-                "numero_cuenta_comercio_receptor": comercio.cuenta.numero_cuenta, # DATO CLAVE
+                "numero_transaccion": str(data['numero_transaccion']),
+                "codigo_banco_emisor_tarjeta": str(data['codigo_banco_emisor_tarjeta']),
+                "numero_tarjeta": str(data['numero_tarjeta']),
+                "cvc_tarjeta": str(data['cvc_tarjeta']),
+                "fecha_vencimiento_tarjeta": str(data['fecha_vencimiento_tarjeta']),
+                "codigo_banco_comercio_receptor": str(data['codigo_banco_comercio_receptor']),
+                "numero_cuenta_comercio_receptor": str(comercio.cuenta.numero_cuenta),
                 "monto_pagado": float(data['monto_pagado']), # Convertido a float para serialización JSON
             }
-
-            # Enviar Request con Timeout
+            # 3. Headers de Seguridad (Preparamos para el token del aliado)
+            headers = {
+                "Content-Type": "application/json",
+                # "Authorization": "Bearer TOKEN_DEL_ALIADO"  <-- Descomentar cuando lo tengas
+            }
+            # 4. Intento de Conexión con manejo de errores JSON
             try:
-                response = requests.post(url_destino, json=payload_banco, timeout=15)
+                response = requests.post(url_destino, json=payload_banco, headers=headers, timeout=15)
                 
                 if response.status_code == 201:
-                    # El otro banco aprobó. Acredito al comercio.
-                    comercio.cuenta.saldo += data['monto_pagado']
-                    comercio.cuenta.save()
-                    return Response(status=status.HTTP_201_CREATED)
-                else:
-                    # El otro banco rechazó.
-                    try:
-                        error_data = response.json()
-                        msg = error_data.get('error', {}).get('message', 'Rechazado por banco emisor')
-                        return error_response("IERROR_1002", f"Error: {msg}")
-                    except:
-                         return error_response("IERROR_1002", "Error desconocido del banco emisor")
-
-            except requests.exceptions.RequestException:
-                return error_response("IERROR_1002", "Error: Tiempo de espera agotado con el banco emisor.")
-
+                    with transaction.atomic():
+                        comercio.cuenta.saldo += data['monto_pagado']
+                        comercio.cuenta.save()
+                    return Response({"message": "Pago aprobado por banco externo"}, status=status.HTTP_201_CREATED)
+                
+                # Manejo robusto de errores del emisor
+                try:
+                    error_json = response.json()
+                    msg = error_json.get('error', {}).get('message', 'Transacción declinada por el banco emisor.')
+                except:
+                    msg = f"El banco emisor respondió con estado {response.status_code}."
+                    
+                return error_response("IERROR_1002", msg, http_status=status.HTTP_402_PAYMENT_REQUIRED)
+            except requests.exceptions.RequestException as e:
+                logger.error(f"Timeout o error de red con Banco {codigo_banco_destino}: {str(e)}")
+                return error_response("IERROR_1002", "No se pudo establecer conexión con el banco emisor (Timeout).")
         except Directorio.DoesNotExist:
-            return error_response("IERROR_1002", f"Error: No hay conexión con el Banco {codigo_banco_destino}")
+            return error_response("IERROR_1002", f"El banco {codigo_banco_destino} no está registrado en el directorio.")
         except Exception as e:
-            logger.error(f"Error interno al enrutar pago: {str(e)}", exc_info=True)
-            return error_response("IERROR_1002", "Error interno al procesar el enrutamiento con el banco emisor.")
+            logger.error(f"Fallo catastrófico en enrutamiento: {str(e)}", exc_info=True)
+            return error_response("IERROR_500", "Error interno en el módulo de enrutamiento.")
 
 
 
