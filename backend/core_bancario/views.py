@@ -142,7 +142,16 @@ class ProcesarPagoComercioView(APIView):
             return error_response("IERROR_1001", "Error: No se encontró ningún cliente afiliado con el código identificador provisto.")
 
         # 2. Determinar si la tarjeta es MÍA (On-Us) o AJENA (Off-Us)
-        banco_emisor_code = data['codigo_banco_emisor_tarjeta']
+        # Extraer el código del banco emisor del número de tarjeta (dígitos 3 al 6)
+        numero_tarjeta = data.get('numero_tarjeta', '')
+        banco_emisor_code = numero_tarjeta[2:6] if len(numero_tarjeta) >= 6 else None
+
+        # Si el campo opcional viene, tiene prioridad (para pruebas o casos borde)
+        if data.get('codigo_banco_emisor_tarjeta'):
+            banco_emisor_code = data['codigo_banco_emisor_tarjeta']
+
+        if not banco_emisor_code:
+            return error_response("IERROR_BIN_01", "No se pudo determinar el banco emisor de la tarjeta.", status.HTTP_400_BAD_REQUEST)
 
         if banco_emisor_code == MI_BANCO_DEFAULT:
             # --- PROCESAMIENTO INTERNO (Nosotros somos el emisor también) ---

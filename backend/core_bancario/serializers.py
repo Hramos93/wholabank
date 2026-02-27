@@ -39,7 +39,7 @@ class DashboardSerializer(serializers.ModelSerializer):
 # Serializador para el CASO 1: Comercio -> Banco Adquiriente (Nosotros)
 class PagoComercioSerializer(serializers.Serializer):
     numero_transaccion = serializers.CharField()
-    codigo_banco_emisor_tarjeta = serializers.CharField()
+    codigo_banco_emisor_tarjeta = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     numero_tarjeta = serializers.CharField()
     cvc_tarjeta = serializers.CharField()
     fecha_vencimiento_tarjeta = serializers.CharField()
