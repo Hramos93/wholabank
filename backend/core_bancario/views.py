@@ -118,8 +118,8 @@ class RegistroClienteView(APIView):
 # ============================================================================
 @method_decorator(csrf_exempt, name='dispatch')
 class ProcesarPagoComercioView(APIView):
-    # Requiere Auth por Token (Seguridad reforzada para interoperabilidad)
-    permission_classes = [IsAuthenticated]
+    # Endpoint público para simular datáfonos y facilitar pruebas de integración.
+    permission_classes = [AllowAny]
 
     def post(self, request):
         serializer = PagoComercioSerializer(data=request.data)
