@@ -129,11 +129,25 @@ class ProcesarPagoComercioView(APIView):
         data = serializer.validated_data
         
         # Limpieza del número de tarjeta: eliminar espacios en blanco para procesar.
-        if 'numero_tarjeta' in data:
-            data['numero_tarjeta'] = data['numero_tarjeta'].replace(' ', '')
+        numero_tarjeta_limpio = data.get('numero_tarjeta', '').replace(' ', '')
+        data['numero_tarjeta'] = numero_tarjeta_limpio
+
+        # Diccionario de normalización de códigos bancarios
+        mapeo_bancos = {
+            "BANCO_1": "0001",
+            "BANCO_2": "0002",
+            "BANCO_5": "0005",
+            "0001": "0001",
+            "0002": "0002",
+            "0005": "0005"
+        }
+
+        # Normalizar el banco receptor (del JSON)
+        receptor_raw = data.get('codigo_banco_comercio_receptor')
+        codigo_banco_receptor = mapeo_bancos.get(receptor_raw, receptor_raw)
+        data['codigo_banco_comercio_receptor'] = codigo_banco_receptor
 
         # VALIDACIÓN TEMPRANA: Asegurar que la petición es para nuestro banco.
-        codigo_banco_receptor = data.get('codigo_banco_comercio_receptor')
         if codigo_banco_receptor != MI_BANCO_DEFAULT:
             return error_response("IERROR_1007", "Error: Llamando a mi endpoint con otro banco")
 
@@ -146,13 +160,14 @@ class ProcesarPagoComercioView(APIView):
             return error_response("IERROR_1001", "Error: No se encontró ningún cliente afiliado con el código identificador provisto.")
 
         # 2. Determinar si la tarjeta es MÍA (On-Us) o AJENA (Off-Us)
-        # Extraer el código del banco emisor del número de tarjeta (dígitos 3 al 6)
-        numero_tarjeta = data.get('numero_tarjeta', '')
-        banco_emisor_code = numero_tarjeta[2:6] if len(numero_tarjeta) >= 6 else None
+        # Normalizar el banco emisor (extraído del BIN de la tarjeta)
+        banco_emisor_raw = numero_tarjeta_limpio[:4]
+        banco_emisor_code = mapeo_bancos.get(banco_emisor_raw, banco_emisor_raw)
 
         # Si el campo opcional viene, tiene prioridad (para pruebas o casos borde)
         if data.get('codigo_banco_emisor_tarjeta'):
-            banco_emisor_code = data['codigo_banco_emisor_tarjeta']
+            emisor_raw_from_json = data.get('codigo_banco_emisor_tarjeta')
+            banco_emisor_code = mapeo_bancos.get(emisor_raw_from_json, emisor_raw_from_json)
 
         if not banco_emisor_code:
             return error_response("IERROR_BIN_01", "No se pudo determinar el banco emisor de la tarjeta.", status.HTTP_400_BAD_REQUEST)
