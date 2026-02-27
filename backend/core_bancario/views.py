@@ -249,50 +249,50 @@ class ProcesarPagoComercioView(APIView):
 # Otro banco nos pide autorizar un pago de NUESTRA tarjeta
 # ============================================================================
 class AutorizarPagoBancoView(APIView):
-    permission_classes = []
+    # 1. SEGURIDAD: Exigimos Token JWT. El banco aliado debe autenticarse.
+    permission_classes = [IsAuthenticated]
 
     def post(self, request):
         serializer = AutorizacionBancoSerializer(data=request.data)
         if not serializer.is_valid():
              return error_response("IERROR_000", "Formato JSON inválido", status.HTTP_400_BAD_REQUEST)
-
         data = serializer.validated_data
-
-        # 1. Buscar la Tarjeta
         try:
+            # 2. Buscar la Tarjeta
             tarjeta = Tarjeta.objects.get(numero=data['numero_tarjeta'])
+            
+            # 3. Validar Estado Operativo
+            if not tarjeta.estado:
+                 return error_response("IERROR_1003", "Error: Su tarjeta se encuentra inoperativa.")
+            
+            # 4. Validar Seguridad (CVV)
+            if tarjeta.cvv != data['cvc_tarjeta']:
+                return error_response("IERROR_1005", "Error: Datos de seguridad inválidos.")
+            # 5. Validar Saldo
+            cuenta = tarjeta.cuenta
+            if cuenta.saldo < data['monto_pagado']:
+                 return error_response("IERROR_1004", "Error: Usted ha sobrepasado su límite de crédito.")
+            # 6. TRANSACCIÓN ATÓMICA: Todo o Nada
+            with transaction.atomic():
+                cuenta.saldo -= data['monto_pagado']
+                cuenta.save()
+                Transaccion.objects.create(
+                    tipo='PAGO_INTERBANCARIO',
+                    monto=data['monto_pagado'],
+                    cuenta_origen=cuenta,
+                    estado='APROBADO',
+                    codigo_respuesta='201',
+                    banco_emisor_id=MI_BANCO_DEFAULT,
+                    mensaje_error=f"Autorizado para comercio ext: {data['codigo_banco_comercio_receptor']}"
+                )
+            
+            logger.info(f"AUDITORIA EMISOR: Aprobado pago de {data['monto_pagado']} a comercio {data['codigo_banco_comercio_receptor']}")
+            return Response({"message": "Transacción autorizada exitosamente"}, status=status.HTTP_201_CREATED)
         except Tarjeta.DoesNotExist:
             return error_response("IERROR_1005", "Error: No se encontró ninguna tarjeta con los datos provistos.")
-
-        # 2. Validar Estado
-        if not tarjeta.estado:
-             return error_response("IERROR_1003", "Error: Su tarjeta se encuentra inoperativa.")
-        
-        # 3. Validar Saldo
-        cuenta = tarjeta.cuenta
-        if cuenta.saldo < data['monto_pagado']:
-             return error_response("IERROR_1004", "Error: Usted ha sobrepasado su límite de crédito.")
-
-        # 4. Validar Seguridad (CVV)
-        if tarjeta.cvv != data['cvc_tarjeta']:
-            return error_response("IERROR_1005", "Error: Datos de seguridad inválidos.")
-
-        # 5. Ejecutar Débito
-        cuenta.saldo -= data['monto_pagado']
-        cuenta.save()
-
-        # Registrar Log
-        Transaccion.objects.create(
-            tipo='TRANSFERENCIA', # O PAGO_INTERBANCARIO
-            monto=data['monto_pagado'],
-            cuenta_origen=cuenta,
-            estado='APROBADO',
-            codigo_respuesta='201',
-            banco_emisor_id=settings.MI_CODIGO_BANCO,
-            mensaje_error=f"Autorizado para comercio ext: {data['codigo_banco_comercio_receptor']}"
-        )
-
-        return Response(status=status.HTTP_201_CREATED)
+        except Exception as e:
+            logger.error(f"Fallo en autorización de pago externo: {str(e)}", exc_info=True)
+            return error_response("IERROR_500", "Error interno al procesar la autorización.")
 # ============================================================================
 # VISTA 4: VIsta de aministración
 class AdminDashboardView(APIView):
