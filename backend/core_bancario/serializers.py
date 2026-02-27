@@ -45,7 +45,7 @@ class PagoComercioSerializer(serializers.Serializer):
     fecha_vencimiento_tarjeta = serializers.CharField()
     codigo_banco_comercio_receptor = serializers.CharField()
     codigo_identificador_comercio_receptor = serializers.CharField()
-    monto_pagado = serializers.DecimalField(max_digits=15, decimal_places=2)
+    monto_pagado = serializers.DecimalField(max_digits=15, decimal_places=2, min_value=0.01)
 
 # Serializador para el registro de clientes (Refactorización)
 class RegistroClienteSerializer(serializers.Serializer):
@@ -166,7 +166,7 @@ class AutorizacionBancoSerializer(serializers.Serializer):
     fecha_vencimiento_tarjeta = serializers.CharField()
     codigo_banco_comercio_receptor = serializers.CharField()
     numero_cuenta_comercio_receptor = serializers.CharField() # Nota que este campo cambia respecto al anterior
-    monto_pagado = serializers.DecimalField(max_digits=15, decimal_places=2)
+    monto_pagado = serializers.DecimalField(max_digits=15, decimal_places=2, min_value=0.01)
 
 # --- SERIALIZER PERSONALIZADO PARA LOGIN ---
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):

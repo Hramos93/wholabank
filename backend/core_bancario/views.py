@@ -177,6 +177,9 @@ class ProcesarPagoComercioView(APIView):
                     codigo_respuesta='201',
                     banco_emisor_id=settings.MI_CODIGO_BANCO
                 )
+                
+                # LOG DE AUDITORÍA: Confirmación visual en consola del descuento de saldo
+                logger.info(f"AUDITORIA PAGO: -{data['monto_pagado']} a Cuenta {cuenta_cliente.numero_cuenta} | Nuevo Saldo: {cuenta_cliente.saldo}")
 
             return Response(status=status.HTTP_201_CREATED)
 
