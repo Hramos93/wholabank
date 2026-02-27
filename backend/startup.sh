@@ -13,6 +13,10 @@ echo "Ejecutando migraciones de base de datos..."
 python manage.py makemigrations
 python manage.py migrate --noinput
 
+# Ejecuta la carga masiva de aliados (solo si la tabla está vacía, validado internamente).
+echo "Verificando carga inicial de aliados..."
+python cargar_aliados.py
+
 # Recolecta todos los archivos estáticos (React, etc.) en la carpeta STATIC_ROOT.
 # La opción --noinput evita prompts y --clear asegura una recolección limpia.
 echo "Ejecutando collectstatic..."
