@@ -205,7 +205,7 @@ class ProcesarPagoComercioView(APIView):
                 "fecha_vencimiento_tarjeta": data['fecha_vencimiento_tarjeta'],
                 "codigo_banco_comercio_receptor": data['codigo_banco_comercio_receptor'],
                 "numero_cuenta_comercio_receptor": comercio.cuenta.numero_cuenta, # DATO CLAVE
-                "monto_pagado": data['monto_pagado'] # Eliminamos float() para preservar la precisión de Decimal
+                "monto_pagado": float(data['monto_pagado']), # Convertido a float para serialización JSON
             }
 
             # Enviar Request con Timeout
@@ -231,6 +231,10 @@ class ProcesarPagoComercioView(APIView):
 
         except Directorio.DoesNotExist:
             return error_response("IERROR_1002", f"Error: No hay conexión con el Banco {codigo_banco_destino}")
+        except Exception as e:
+            logger.error(f"Error interno al enrutar pago: {str(e)}", exc_info=True)
+            return error_response("IERROR_1002", "Error interno al procesar el enrutamiento con el banco emisor.")
+
 
 
 # ============================================================================
