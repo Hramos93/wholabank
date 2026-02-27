@@ -51,19 +51,19 @@ Este endpoint simula un Datáfono (POS). Recibe los datos de una tarjeta y decid
 
 *   **Validación de Comercio:** Verifica que el comercio receptor exista y esté activo en WholaBank.
 *   **Enrutamiento (Routing):**
-    *   **Caso "On-Us" (Mismo Banco):** Si el BIN de la tarjeta coincide con `MI_CODIGO_BANCO`, la transacción se procesa internamente:
+    *   **Caso "On-Us" (Banco Adquiriente = Banco Emisor):** Si el BIN de la tarjeta coincide con `MI_CODIGO_BANCO`, el Banco Adquiriente actúa también como Banco Emisor y procesa la transacción internamente:
         1.  Valida existencia de tarjeta, estado (activa/bloqueada), CVV y saldo suficiente.
         2.  Ejecuta una transacción atómica: Debita al Cliente -> Acredita al Comercio.
-    *   **Caso "Off-Us" (Otro Banco):** Si el BIN pertenece a otro banco:
-        1.  Busca la URL del banco destino en el modelo `Directorio`.
-        2.  Reenvía la solicitud al endpoint `autorizar_pago/` del banco emisor.
+    *   **Caso "Off-Us" (Banco Adquiriente ≠ Banco Emisor):** Si el BIN pertenece a una entidad externa:
+        1.  Busca la URL del **Banco Emisor** destino en el modelo `Directorio`.
+        2.  Reenvía la solicitud al endpoint `autorizar_pago/` del **Banco Emisor**.
         3.  Si el banco emisor aprueba (201 Created), WholaBank acredita el dinero a su comercio cliente.
 
 #### 2. Rol Emisor (Autorizar Pago - `AutorizarPagoBancoView`)
-Este endpoint es consumido por **otros bancos**.
-*   Recibe una solicitud de débito para una tarjeta de WholaBank.
+Este endpoint es consumido por **Bancos Adquirientes externos**.
+*   Recibe una solicitud de débito de un Banco Adquiriente para una tarjeta de WholaBank (Banco Emisor).
 *   Valida las credenciales de la tarjeta (Número, CVV, Expiración) y el saldo disponible.
-*   Si todo es correcto, debita la cuenta del cliente local y responde con éxito (`201 Created`) al banco solicitante.
+*   Si todo es correcto, debita la cuenta del cliente local y responde con éxito (`201 Created`) al Banco Adquiriente solicitante.
 
 ---
 
