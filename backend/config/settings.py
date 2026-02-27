@@ -95,6 +95,7 @@ else:
         "https://franelix.vercel.app",
         "https://app.banprofi.site",
         "https://lejardychurio.github.io",
+        "http://localhost:5173",
     ]
 
 # --- CONFIGURACIÓN DE DRF (Django Rest Framework) ---

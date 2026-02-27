@@ -17,9 +17,8 @@ urlpatterns = [
     path('registro/', RegistroClienteView.as_view(), name='registro'),
 
     # 3. Pagos y Transferencias (Sprint 2)
-    path('procesar_pago/', ProcesarPagoComercioView.as_view(), name='procesar_pago'),
+    path('procesar_pago_comercio/', ProcesarPagoComercioView.as_view(), name='procesar_pago_comercio'),
     path('autorizar_pago/', AutorizarPagoBancoView.as_view(), name='autorizar_pago'),
     path('admin-panel/', AdminDashboardView.as_view(), name='admin_panel'),
     path('admin/registrar-banco/', RegistroBancoAliadoView.as_view(), name='registrar_banco'),
 ]
-
