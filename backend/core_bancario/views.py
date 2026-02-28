@@ -228,6 +228,11 @@ class ProcesarPagoComercioView(APIView):
 
     def enrutar_pago_externo(self, data, comercio, codigo_banco_destino):
         """ Lógica blindada para interoperabilidad (Off-Us) """
+        # Filtro de Auto-Llamada: Prevenir que el banco se llame a sí mismo en un bucle.
+        # Si por error de enrutamiento se intenta procesar un pago propio como externo, se redirige a la lógica interna.
+        if codigo_banco_destino == MI_BANCO_DEFAULT:
+            return self.procesar_pago_interno(data, comercio)
+
         try:
             # 1. Buscar banco en directorio
             banco_destino = Directorio.objects.get(codigo=codigo_banco_destino, tipo='BANCO')
