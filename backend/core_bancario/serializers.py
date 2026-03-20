@@ -180,7 +180,7 @@ class RegistroClienteSerializer(serializers.Serializer):
 
             # 4. Si es Jurídico, afiliarlo como Comercio automáticamente
             if tipo == 'JURIDICO':
-                codigo_comercio = f"C-{rif_final}"
+                codigo_comercio = rif_final
                 Comercio.objects.create(
                     codigo_identificador=codigo_comercio,
                     nombre=validated_data['nombre_completo'],

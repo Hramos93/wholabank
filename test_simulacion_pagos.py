@@ -3,9 +3,8 @@ import random
 import string
 import time
 
-# URL de Producción (Azure)
-BASE_URL = "https://wholabank-app-fghqdsdrb5f6a4bw.canadacentral-01.azurewebsites.net/api"
-# BASE_URL = "http://127.0.0.1:8000/api" # Descomentar para pruebas locales
+# BASE_URL = "https://wholabank-app-fghqdsdrb5f6a4bw.canadacentral-01.azurewebsites.net/api"
+BASE_URL = "http://127.0.0.1:8000/api" # Descomentar para pruebas locales
 
 def random_str(length=6):
     return ''.join(random.choices(string.ascii_lowercase + string.digits, k=length))
@@ -15,7 +14,7 @@ def run_audit():
     
     # 1. REGISTRAR COMERCIO (Para recibir los pagos)
     rif_comercio = f"J-{random.randint(10000000, 99999999)}-0"
-    codigo_comercio = f"C-{rif_comercio}"
+    codigo_comercio = rif_comercio
     print(f"\n[1] Registrando Comercio (Destino): {rif_comercio}")
     
     requests.post(f"{BASE_URL}/registro/", json={

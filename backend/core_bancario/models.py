@@ -158,6 +158,8 @@ class Transaccion(models.Model):
     TIPO_CHOICES = (
         ('PAGO_COMERCIO', 'Pago en Comercio'),
         ('TRANSFERENCIA', 'Transferencia'),
+        ('PAGO_INTERBANCARIO', 'Pago Interbancario'),
+        ('COMISION_BANCARIA', 'Comisión Bancaria'),
     )
     ESTADO_CHOICES = (
         ('APROBADO', 'Aprobado'),
@@ -193,4 +195,33 @@ class AdminDashboardProxy(Cliente):
         proxy = True
         verbose_name = 'Panel de Control del Banco'
         verbose_name_plural = 'Panel de Control del Banco'
+
+
+# --- MODELO PARA CONFIGURACIONES GLOBALES ---
+class ConfiguracionGlobal(models.Model):
+    """
+    Modelo Singleton para almacenar configuraciones clave-valor.
+    Permite cambiar parámetros (ej. tasas) desde el admin sin redesplegar.
+    """
+    clave = models.CharField(max_length=50, primary_key=True)
+    valor = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.clave
+
+    def save(self, *args, **kwargs):
+        # Forzar a que siempre se use el mismo ID para mantener un único registro
+        self.pk = "config"
+        super(ConfiguracionGlobal, self).save(*args, **kwargs)
     
+    @classmethod
+    def load(cls):
+        # Cargar la configuración como un objeto fácil de usar
+        # Esto es más para uso futuro, pero es un buen patrón
+        try:
+            config = cls.objects.get(pk="config")
+            # En un futuro, podríamos parsear los valores (ej. a float)
+            return config
+        except cls.DoesNotExist:
+            return None
+
