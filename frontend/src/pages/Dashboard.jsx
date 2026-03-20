@@ -134,7 +134,7 @@ const Dashboard = () => {
                                                         </div>
                                                         <div>
                                                             <span className="block text-[10px] opacity-70">CVC</span>
-                                                            <CvvDisplay cvv={t.cvc} />
+                                                            <CvvDisplay cvv={t.cvv} />
                                                         </div>
                                                     </div>
                                                 </div>
