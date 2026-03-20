@@ -11,8 +11,8 @@ from rest_framework_simplejwt.views import TokenRefreshView
 urlpatterns = [
     path('admin/', admin.site.urls),
 
-    # Ruta para el Health Check de Render
-    path('health/', health_check, name='health_check'),
+    # Movemos el Health Check a la jerarquía de la API (Alineado con warmup.sh)
+    path('api/health/', health_check, name='health_check'),
     
     # Autenticación
     path('api/token/', MyTokenObtainPairView.as_view(), name='token_obtain_pair'),
@@ -26,8 +26,9 @@ urlpatterns = [
         'document_root': os.path.join(settings.BASE_DIR, '..', 'frontend', 'dist', 'assets')
     }),
 
-    # RUTA CATCH-ALL ACTUALIZADA: Ignoramos tanto /static/ como /assets/ para que no envíen el index.html por error
-    re_path(r'^(?!static/|assets/).*$', FrontendAppView.as_view(), name='frontend_app'),
+    # RUTA CATCH-ALL SEGURA: Excluimos explícitamente las rutas del backend (con o sin slash).
+    # Esto permite que Django devuelva 404s reales o haga redirecciones 301 (Trailing Slash) en vez de servir HTML.
+    re_path(r'^(?!api(/|$)|admin(/|$)|static(/|$)|assets(/|$)).*$', FrontendAppView.as_view(), name='frontend_app'),
 ]
 
 # En modo DEBUG, Django sirve los archivos estáticos. En producción, Whitenoise lo hace.
