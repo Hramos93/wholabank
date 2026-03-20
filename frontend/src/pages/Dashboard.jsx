@@ -7,6 +7,7 @@ import {
     ChevronRight, Wallet, ArrowUpRight, ArrowDownLeft 
 } from 'lucide-react';
 import CvvDisplay from '../components/CvvDisplay';
+import TransactionHistory from '../components/TransactionHistory';
 
 const Dashboard = () => {
     const [data, setData] = useState(null);
@@ -144,6 +145,9 @@ const Dashboard = () => {
                                 </div>
                             </div>
                         ))}
+
+                        {/* === HISTORIAL DE TRANSACCIONES (NUEVO) === */}
+                        <TransactionHistory />
                     </div>
 
                     {/* === COLUMNA DERECHA (Accesos Rápidos) === */}

@@ -6,7 +6,8 @@ from .views import (
     ProcesarPagoComercioView, 
     AutorizarPagoBancoView,
     AdminDashboardView,
-    RegistroBancoAliadoView
+    RegistroBancoAliadoView,
+    TransaccionListView
 )
 
 urlpatterns = [
@@ -19,6 +20,10 @@ urlpatterns = [
     # 3. Pagos y Transferencias (Sprint 2)
     path('procesar_pago_comercio/', ProcesarPagoComercioView.as_view(), name='procesar_pago_comercio'),
     path('autorizar_pago/', AutorizarPagoBancoView.as_view(), name='autorizar_pago'),
+
+    # 4. Historial de Transacciones (NUEVO)
+    path('transacciones/', TransaccionListView.as_view(), name='transacciones'),
+
     path('admin-panel/', AdminDashboardView.as_view(), name='admin_panel'),
     path('admin/registrar-banco/', RegistroBancoAliadoView.as_view(), name='registrar_banco'),
 ]

@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
 from django.db import models, transaction
-from django.db.models import Sum
+from django.db.models import Sum, Q
 from django.contrib.auth.models import User  # <--- CRUCIAL: Faltaba esto seguramente
 from django.conf import settings  # Para importar configuraciones
 import requests
@@ -35,7 +35,7 @@ MAPEO_BANCOS = {
 # Importamos tus modelos y serializadores
 from .models import Cliente, Cuenta, Tarjeta, Comercio, Directorio, Transaccion
 from .serializers import (DashboardSerializer, PagoComercioSerializer, AutorizacionBancoSerializer, 
-                          RegistroClienteSerializer, MyTokenObtainPairSerializer)
+                          RegistroClienteSerializer, MyTokenObtainPairSerializer, TransaccionSerializer)
 
 # --- UTILERÍA PARA RESPUESTAS DE ERROR (ESTÁNDAR) ---
 def error_response(code, message, http_status=status.HTTP_404_NOT_FOUND):
@@ -283,6 +283,8 @@ class ProcesarPagoComercioView(APIView):
 
 
 
+from django.db.models import Q
+
 # ============================================================================
 # VISTA 3: AUTORIZAR PAGO BANCO (ROL EMISOR - SPRINT 2)
 # Otro banco nos pide autorizar un pago de NUESTRA tarjeta
@@ -332,6 +334,28 @@ class AutorizarPagoBancoView(APIView):
         except Exception as e:
             logger.error(f"Fallo en autorización de pago externo: {str(e)}", exc_info=True)
             return error_response("IERROR_500", "Error interno al procesar la autorización.")
+
+# ============================================================================
+# VISTA 4: HISTORIAL DE TRANSACCIONES
+# ============================================================================
+class TransaccionListView(APIView):
+    """
+    Devuelve todas las transacciones asociadas a las cuentas del usuario logueado.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # Filtramos transacciones donde el usuario es origen O destino.
+        # Usamos Q para consultas complejas (OR).
+        user_accounts = Cuenta.objects.filter(cliente__user=request.user)
+        transactions = Transaccion.objects.filter(
+            Q(cuenta_origen__in=user_accounts) | Q(cuenta_destino__in=user_accounts)
+        ).distinct().order_by('-fecha') # Ordenamos por fecha, más reciente primero
+
+        # Pasamos el 'context' para que el serializador pueda acceder al request.user
+        serializer = TransaccionSerializer(transactions, many=True, context={'request': request})
+        return Response(serializer.data)
+
 # ============================================================================
 # VISTA 4: VIsta de aministración
 class AdminDashboardView(APIView):

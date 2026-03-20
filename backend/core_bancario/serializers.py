@@ -13,11 +13,58 @@ class TarjetaSerializer(serializers.ModelSerializer):
         # Solo enviamos campos necesarios al frontend, ocultamos IDs internos si no son necesarios
         fields = ['numero', 'fecha_vencimiento', 'cvv', 'estado']
 
+class TransaccionSerializer(serializers.Serializer):
+    """
+    Serializador para mostrar transacciones al cliente.
+    Determina si la transacción es un crédito o un débito desde la perspectiva del usuario.
+    """
+    # Campos directos del modelo
+    id = serializers.IntegerField(read_only=True)
+    tipo = serializers.CharField(read_only=True)
+    monto = serializers.DecimalField(max_digits=15, decimal_places=2, read_only=True)
+    fecha = serializers.DateTimeField(read_only=True)
+    estado = serializers.CharField(read_only=True)
+
+    # Campos personalizados para mejorar la experiencia en el frontend
+    direccion = serializers.SerializerMethodField()
+    descripcion = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Transaccion
+        fields = ['id', 'tipo', 'monto', 'fecha', 'estado', 'direccion', 'descripcion']
+
+    def get_direccion(self, obj):
+        """ Determina si la transacción es 'ENTRANTE' o 'SALIENTE' para el usuario. """
+        user = self.context['request'].user
+        if obj.cuenta_destino and obj.cuenta_destino.cliente.user == user:
+            return 'ENTRANTE'
+        if obj.cuenta_origen and obj.cuenta_origen.cliente.user == user:
+            return 'SALIENTE'
+        return 'DESCONOCIDO'
+
+    def get_descripcion(self, obj):
+        """ Genera una descripción legible para la transacción. """
+        if obj.tipo == 'PAGO_COMERCIO':
+            return f"Pago en comercio"
+        if obj.tipo == 'TRANSFERENCIA':
+            # Asumiendo que las transferencias siempre tienen origen y destino
+            if self.get_direccion(obj) == 'ENTRANTE':
+                return f"Transferencia recibida"
+            else:
+                return f"Transferencia enviada"
+        if obj.tipo == 'PAGO_INTERBANCARIO':
+            return f"Pago interbancario a comercio"
+        if obj.mensaje_error == 'Bono de Bienvenida':
+             return "Bono de Bienvenida"
+        return "Movimiento genérico"
+
+
 class CuentaSerializer(serializers.ModelSerializer):
     tarjetas = TarjetaSerializer(many=True, read_only=True)
     
     # Agregamos un campo calculado para que se vea bonito en el JSON
     tipo_texto = serializers.CharField(source='get_tipo_cuenta_display', read_only=True)
+
 
     class Meta:
         model = Cuenta
