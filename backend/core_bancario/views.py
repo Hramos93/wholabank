@@ -193,20 +193,24 @@ class ProcesarPagoComercioView(APIView):
         receptor_raw = data.get('codigo_banco_comercio_receptor')
         codigo_banco_receptor = MAPEO_BANCOS.get(receptor_raw, receptor_raw)
         data['codigo_banco_comercio_receptor'] = codigo_banco_receptor
-
-        if codigo_banco_receptor != MI_BANCO_DEFAULT:
-            return error_response("IERROR_1007", "Error: Llamando a mi endpoint con otro banco")
+        
+        # Validación: El comercio receptor debe ser de nuestro banco para que actuemos como adquirente.
+        if codigo_banco_receptor != MI_BANCO_DEFAULT: 
+            return error_response("IERROR_1007", "Error: El comercio receptor no pertenece a este banco.", status.HTTP_400_BAD_REQUEST)
 
         try:
             comercio = Comercio.objects.get(codigo_identificador=data['codigo_identificador_comercio_receptor'])
             if not comercio.activo:
-                 return error_response("IERROR_1006", "Error: Comercio no afiliado.")
+                 return error_response("IERROR_1006", "Error: Comercio no afiliado.", status.HTTP_400_BAD_REQUEST)
         except Comercio.DoesNotExist:
-            return error_response("IERROR_1001", "Error: Comercio no encontrado.")
+            return error_response("IERROR_1001", "Error: Comercio no encontrado.", status.HTTP_404_NOT_FOUND)
 
-        banco_emisor_raw = numero_tarjeta_limpio[:4]
-        banco_emisor_code = MAPEO_BANCOS.get(banco_emisor_raw, banco_emisor_raw)
+        # Determinar el banco emisor de la tarjeta usando el BIN (primeros 5 dígitos)
+        # Priorizamos el BIN de la tarjeta, pero permitimos que el JSON lo sugiera si es consistente.
+        bin_tarjeta = numero_tarjeta_limpio[:len(settings.MI_BIN_TARJETA)] # Usar la longitud del BIN de settings
+        banco_emisor_code = MAPEO_BANCOS.get(bin_tarjeta, bin_tarjeta)
 
+        # Si el JSON proporciona un código de banco emisor, lo usamos si es válido.
         if data.get('codigo_banco_emisor_tarjeta'):
             emisor_raw_from_json = data.get('codigo_banco_emisor_tarjeta')
             banco_emisor_code = MAPEO_BANCOS.get(emisor_raw_from_json, emisor_raw_from_json)

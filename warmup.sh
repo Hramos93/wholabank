@@ -15,8 +15,8 @@
 # lanzar el servidor Gunicorn en segundo plano.
 
 # URL del endpoint de salud de la API.
-# Asegúrate de que esta URL sea accesible desde donde se ejecuta el script.
-HEALTH_CHECK_URL="https://wholabank-app-fghqdsdrb5f6a4bw.canadacentral-01.azurewebsites.net/api/health/"
+# Asegúrate de que esta URL sea accesible desde donde se ejecuta el script. Debe ser la URL interna del servidor.
+HEALTH_CHECK_URL="http://localhost:8000/api/health/"
 
 # Configuración del sondeo
 MAX_ATTEMPTS=60 # Número máximo de intentos (60 intentos * 5 segundos = 300 segundos = 5 minutos)

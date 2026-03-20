@@ -208,7 +208,6 @@ STATICFILES_DIRS = [os.path.join(BASE_DIR, '..', 'frontend', 'dist')]
 
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-WHITENOISE_ROOT = os.path.join(BASE_DIR, '..', 'frontend', 'dist')
 
 
 # --- CONFIGURACIONES PERSONALIZADAS DE LA APP ---

@@ -89,13 +89,13 @@ class Tarjeta(models.Model):
     def save(self, *args, **kwargs):
         if not self.numero:
             # --- Generación de Número de Tarjeta ---
-            # 1. Prefijo del banco (4 dígitos)
-            prefix = settings.MI_CODIGO_BANCO
+            # 1. BIN del banco (definido en settings, ej. 5 dígitos)
+            bin_prefix = settings.MI_BIN_TARJETA
             
-            # 2. Número de cuenta individual (12 dígitos aleatorios)
-            account_id = str(random.randint(1, 999999999999)).zfill(12)
+            # 2. Número de cuenta individual (para completar a 16 dígitos, ej. 11 dígitos aleatorios)
+            account_id = str(random.randint(1, 10**(16 - len(bin_prefix)) - 1)).zfill(16 - len(bin_prefix))
             
-            self.numero = f"{prefix}{account_id}"
+            self.numero = f"{bin_prefix}{account_id}"
 
             # --- SEGURIDAD ---
             # CVV: 3 dígitos aleatorios (simulación criptográfica)
@@ -217,4 +217,3 @@ class ConfiguracionGlobal(models.Model):
             return config
         except cls.DoesNotExist:
             return None
-

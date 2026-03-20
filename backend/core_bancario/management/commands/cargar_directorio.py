@@ -56,7 +56,7 @@ class Command(BaseCommand):
                         # 1. SI ES BANCO: Solo registro en el Directorio
                         if row['tipo'] == 'BANCO':
                             Directorio.objects.update_or_create(
-                                codigo=row['codigocodigo'],
+                                codigo=row['codigo'],
                                 defaults={
                                     'nombre': row['nombre'],
                                     'tipo': 'BANCO',
@@ -73,7 +73,7 @@ class Command(BaseCommand):
                                 'username': row['nombre'].lower().replace(" ", "_"),
                                 'email': f"contacto@{row['nombre'].lower().replace(' ', '')}.com",
                                 'password': f"{row['codigocodigo']}Test2026.",
-                                'nombre_completo': row['nombre'],
+                                'nombre_completo': row['nombre'], # Asegúrate que este campo exista en tu CSV
                                 'tipo_persona': 'JURIDICO',
                                 'rif': rif_corregido,
                                 'telefono': '04140000000', # Inventado
@@ -89,7 +89,7 @@ class Command(BaseCommand):
                                 
                                 # También lo agregamos al Directorio para enrutamiento
                                 Directorio.objects.update_or_create(
-                                    codigo=row['codigocodigo'],
+                                    codigo=row['codigo'],
                                     defaults={
                                         'nombre': row['nombre'],
                                         'tipo': 'COMERCIO',
