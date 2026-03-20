@@ -2,6 +2,7 @@
 
 import logging
 import requests
+from decimal import Decimal
 
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -122,18 +123,25 @@ class ClaimBonusView(APIView):
             return Response({"error": "No se encontró cuenta."}, status=status.HTTP_404_NOT_FOUND)
 
         with transaction.atomic():
-            cuenta_a_creditar.saldo += 1000.00
+            # EL ARREGLO ESTÁ AQUÍ: Usar Decimal con un string adentro
+            bono_monto = Decimal('1000.00')
+
+            cuenta_a_creditar.saldo += bono_monto
             cuenta_a_creditar.save()
             cliente.bono_reclamado = True
             cliente.save()
 
             Transaccion.objects.create(
-                tipo='TRANSFERENCIA', monto=1000.00, cuenta_destino=cuenta_a_creditar,
-                estado='APROBADO', codigo_respuesta='00', banco_emisor_id='WholaBank',
+                tipo='TRANSFERENCIA', 
+                monto=bono_monto, 
+                cuenta_destino=cuenta_a_creditar,
+                estado='APROBADO', 
+                codigo_respuesta='00', 
+                banco_emisor_id='WholaBank',
                 mensaje_error='¡Activaste tu Bono de Bienvenida!' 
             )
 
-        return Response({"message": "¡Felicidades! Has reclamado tu bono de 1000 Bs."}, status=status.HTTP_200_OK)
+        return Response({"message": "¡Felicidades! Has reclamado tu bono de 1.000 Bs."}, status=status.HTTP_200_OK)
 
 
 # ============================================================================
