@@ -56,9 +56,9 @@ GUNICORN_PID=$!
 
 # El script está en el directorio raíz, un nivel por encima de 'backend'.
 
-echo "Ejecutando script de calentamiento..."
+#echo "Ejecutando script de calentamiento..."
 
-/bin/bash ../warmup.sh
+#/bin/bash ../warmup.sh
 
 
 
