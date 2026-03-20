@@ -1,73 +1,90 @@
 # backend/core_bancario/views.py
-from rest_framework.views import APIView
-from django.views.generic import TemplateView
-from rest_framework.response import Response
-from rest_framework import status
-from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
+
+import logging
+import requests
+
+from django.conf import settings
+from django.contrib.auth.models import User
 from django.db import models, transaction
 from django.db.models import Sum, Q
-from django.contrib.auth.models import User  # <--- CRUCIAL: Faltaba esto seguramente
-from django.conf import settings  # Para importar configuraciones
-import requests
 from django.http import JsonResponse
-import logging
-from rest_framework import serializers
-from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
+from django.views.generic import TemplateView
 
-# Configurar un logger para esta vista
+from rest_framework import serializers, status
+from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework_simplejwt.views import TokenObtainPairView
+
+# Importación de Modelos y Serializadores locales
+from .models import Cliente, Cuenta, Tarjeta, Comercio, Directorio, Transaccion
+from .serializers import (
+    DashboardSerializer, PagoComercioSerializer, AutorizacionBancoSerializer, 
+    RegistroClienteSerializer, MyTokenObtainPairSerializer, TransaccionSerializer
+)
+
 logger = logging.getLogger(__name__)
 
-# Constante segura para el código del banco, con fallback.
+# --- CONSTANTES GLOBALES ---
 MI_BANCO_DEFAULT = getattr(settings, 'MI_CODIGO_BANCO', '0001')
 
-# Diccionario de normalización de códigos bancarios para interoperabilidad.
-# Se define a nivel de módulo para evitar su recreación en cada petición.
 MAPEO_BANCOS = {
-    "BANCO_1": "0001",
-    "BANCO_2": "0002",
-    "BANCO_5": "0005",
-    "0001": "0001",
-    "0002": "0002",
-    "0005": "0005"
+    "BANCO_1": "0001", "0001": "0001",
+    "BANCO_2": "0002", "0002": "0002",
+    "BANCO_5": "0005", "0005": "0005"
 }
 
-# Importamos tus modelos y serializadores
-from .models import Cliente, Cuenta, Tarjeta, Comercio, Directorio, Transaccion
-from .serializers import (DashboardSerializer, PagoComercioSerializer, AutorizacionBancoSerializer, 
-                          RegistroClienteSerializer, MyTokenObtainPairSerializer, TransaccionSerializer)
-
-# --- UTILERÍA PARA RESPUESTAS DE ERROR (ESTÁNDAR) ---
+# --- UTILERÍA ---
 def error_response(code, message, http_status=status.HTTP_404_NOT_FOUND):
-    return Response({
-        "error": {
-            "code": code,
-            "message": message
-        }
-    }, status=http_status)
+    return Response({"error": {"code": code, "message": message}}, status=http_status)
+
 
 # ============================================================================
-# VISTA 0: HEALTH CHECK PARA RENDER
+# VISTAS BASE Y SISTEMA
 # ============================================================================
 def health_check(request):
-    """
-    Vista simple que devuelve un 200 OK.
-    Se usa para el Health Check de Render.
-    """
     return JsonResponse({"status": "ok", "message": "Servicio activo"})
 
-
-# ============================================================================
-# VISTA PARA SERVIR LA APP DE REACT
-# ============================================================================
 class FrontendAppView(TemplateView):
-    """
-    Sirve el index.html de React para cualquier ruta que no sea de la API.
-    """
     template_name = 'index.html'
 
+
 # ============================================================================
-# VISTA 1: DASHBOARD CLIENTE (SPRINT 1)
+# AUTENTICACIÓN Y REGISTRO (CON EXCEPCIÓN CSRF)
+# ============================================================================
+@method_decorator(csrf_exempt, name='dispatch')
+class MyTokenObtainPairView(TokenObtainPairView):
+    """ Vista de login personalizada que devuelve datos extra del usuario. """
+    serializer_class = MyTokenObtainPairSerializer
+
+@method_decorator(csrf_exempt, name='dispatch')
+class RegistroClienteView(APIView):
+    """ Vista para el registro de nuevos clientes (Naturales y Jurídicos). """
+    permission_classes = [AllowAny] 
+
+    def post(self, request):
+        serializer = RegistroClienteSerializer(data=request.data)
+        try:
+            serializer.is_valid(raise_exception=True)
+            created_data = serializer.save()
+
+            return Response({
+                "message": "Registro exitoso",
+                "cuenta": created_data['cuenta'].numero_cuenta,
+                "tarjeta": created_data['tarjeta'].numero
+            }, status=status.HTTP_201_CREATED)
+
+        except serializers.ValidationError as e:
+            return Response(e.detail, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            logger.error(f"Error 500 en RegistroClienteView: {str(e)}", exc_info=True)
+            return error_response("IERROR_REG_99", "Ocurrió un error interno. Intente más tarde.", status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# ============================================================================
+# VISTAS DE CLIENTE
 # ============================================================================
 class DashboardView(APIView):
     permission_classes = [IsAuthenticated]
@@ -80,126 +97,108 @@ class DashboardView(APIView):
         except Cliente.DoesNotExist:
             return Response({"error": "Cliente no encontrado"}, status=404)
 
-# --- VISTA DE LOGIN PERSONALIZADA ---
-from rest_framework_simplejwt.views import TokenObtainPairView
+class TransaccionListView(APIView):
+    permission_classes = [IsAuthenticated]
 
-class MyTokenObtainPairView(TokenObtainPairView):
-    """
-    Vista de login personalizada que devuelve si el usuario es admin.
-    """
-    serializer_class = MyTokenObtainPairSerializer
+    def get(self, request):
+        user_accounts = Cuenta.objects.filter(cliente__user=request.user)
+        transactions = Transaccion.objects.filter(
+            Q(cuenta_origen__in=user_accounts) | Q(cuenta_destino__in=user_accounts)
+        ).distinct().order_by('-fecha')
+        
+        serializer = TransaccionSerializer(transactions, many=True, context={'request': request})
+        return Response(serializer.data)
 
-
-
-# --- VISTA 2: REGISTRO DE CLIENTES (REFACTORIZADA) ---
-class RegistroClienteView(APIView):
-    permission_classes = [AllowAny] 
+class ClaimBonusView(APIView):
+    permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        serializer = RegistroClienteSerializer(data=request.data)
-
-        try:
-            serializer.is_valid(raise_exception=True)
-            # El método create del serializador se encarga de toda la lógica de negocio
-            # y de las transacciones de base de datos.
-            created_data = serializer.save() # .save() llama a .create() o .update()
-
-            return Response({
-                "message": "Registro exitoso",
-                "cuenta": created_data['cuenta'].numero_cuenta,
-                "tarjeta": created_data['tarjeta'].numero
-            }, status=status.HTTP_201_CREATED)
-
-        except serializers.ValidationError as e:
-            # DRF maneja automáticamente el formato de los errores de validación
-            return Response(e.detail, status=status.HTTP_400_BAD_REQUEST)
-        
-        except Exception as e:
-            # Para depuración en producción, imprimimos directamente a la consola
-            # para que sea visible en los logs en tiempo real de Azure.
-            print(f"ERROR CRÍTICO EN REGISTRO: {str(e)}")
+        cliente = request.user.cliente
+        if cliente.bono_reclamado:
+            return Response({"error": "Bono ya reclamado."}, status=status.HTTP_400_BAD_REQUEST)
             
-            # Usamos logger para registrar el error detallado en los logs del servidor
-            logger.error(f"Error 500 en RegistroClienteView: {str(e)}", exc_info=True)
-            # Devolvemos un mensaje genérico al usuario por seguridad
-            return error_response("IERROR_REG_99", "Ocurrió un error interno durante el registro. Por favor, intente más tarde.", status.HTTP_500_INTERNAL_SERVER_ERROR)
+        cuenta_a_creditar = cliente.cuentas.first()
+        if not cuenta_a_creditar:
+            return Response({"error": "No se encontró cuenta."}, status=status.HTTP_404_NOT_FOUND)
+
+        with transaction.atomic():
+            cuenta_a_creditar.saldo += 1000.00
+            cuenta_a_creditar.save()
+            cliente.bono_reclamado = True
+            cliente.save()
+
+            Transaccion.objects.create(
+                tipo='TRANSFERENCIA', monto=1000.00, cuenta_destino=cuenta_a_creditar,
+                estado='APROBADO', codigo_respuesta='00', banco_emisor_id='WholaBank',
+                mensaje_error='¡Activaste tu Bono de Bienvenida!' 
+            )
+
+        return Response({"message": "¡Felicidades! Has reclamado tu bono de 1000 Bs."}, status=status.HTTP_200_OK)
+
+
 # ============================================================================
-# VISTA 2: PROCESAR PAGO COMERCIO (ROL ADQUIRIENTE - SPRINT 2)
-# El comercio nos manda la tarjeta para cobrar.
+# NÚCLEO TRANSACCIONAL: PASARELA DE PAGOS E INTEROPERABILIDAD
 # ============================================================================
 @method_decorator(csrf_exempt, name='dispatch')
 class ProcesarPagoComercioView(APIView):
-    # Endpoint público para simular datáfonos y facilitar pruebas de integración.
+    """ Recibe cobros desde datáfonos de comercios (Rol Adquiriente). """
     permission_classes = [AllowAny]
 
     def post(self, request):
         serializer = PagoComercioSerializer(data=request.data)
         if not serializer.is_valid():
-            return error_response("IERROR_000", "Formato JSON inválido: " + str(serializer.errors), status.HTTP_400_BAD_REQUEST)
+            return error_response("IERROR_000", f"JSON inválido: {serializer.errors}", status.HTTP_400_BAD_REQUEST)
 
         data = serializer.validated_data
         
-        # Limpieza del número de tarjeta: eliminar espacios en blanco para procesar.
+        # Validación de Idempotencia (Prevenir cobros duplicados)
+        if Transaccion.objects.filter(referencia_externa=data['numero_transaccion']).exists():
+            return Response({"message": "Esta transacción ya fue procesada exitosamente."}, status=status.HTTP_200_OK)
+        
         numero_tarjeta_limpio = data.get('numero_tarjeta', '').replace(' ', '')
         data['numero_tarjeta'] = numero_tarjeta_limpio
 
-        # Normalizar el banco receptor (del JSON)
         receptor_raw = data.get('codigo_banco_comercio_receptor')
         codigo_banco_receptor = MAPEO_BANCOS.get(receptor_raw, receptor_raw)
         data['codigo_banco_comercio_receptor'] = codigo_banco_receptor
 
-        # VALIDACIÓN TEMPRANA: Asegurar que la petición es para nuestro banco.
         if codigo_banco_receptor != MI_BANCO_DEFAULT:
             return error_response("IERROR_1007", "Error: Llamando a mi endpoint con otro banco")
 
-        # 1. Validar que el comercio existe y es nuestro cliente (Adquiriencia)
         try:
             comercio = Comercio.objects.get(codigo_identificador=data['codigo_identificador_comercio_receptor'])
             if not comercio.activo:
-                 return error_response("IERROR_1006", "Error: Su comercio no se encuentra afiliado en condición de adquiriencia.")
+                 return error_response("IERROR_1006", "Error: Comercio no afiliado.")
         except Comercio.DoesNotExist:
-            return error_response("IERROR_1001", "Error: No se encontró ningún cliente afiliado con el código identificador provisto.")
+            return error_response("IERROR_1001", "Error: Comercio no encontrado.")
 
-        # 2. Determinar si la tarjeta es MÍA (On-Us) o AJENA (Off-Us)
-        # Normalizar el banco emisor (extraído del BIN de la tarjeta)
         banco_emisor_raw = numero_tarjeta_limpio[:4]
         banco_emisor_code = MAPEO_BANCOS.get(banco_emisor_raw, banco_emisor_raw)
 
-        # Si el campo opcional viene, tiene prioridad (para pruebas o casos borde)
         if data.get('codigo_banco_emisor_tarjeta'):
             emisor_raw_from_json = data.get('codigo_banco_emisor_tarjeta')
             banco_emisor_code = MAPEO_BANCOS.get(emisor_raw_from_json, emisor_raw_from_json)
 
         if not banco_emisor_code:
-            return error_response("IERROR_BIN_01", "No se pudo determinar el banco emisor de la tarjeta.", status.HTTP_400_BAD_REQUEST)
+            return error_response("IERROR_BIN_01", "No se pudo determinar el banco emisor.", status.HTTP_400_BAD_REQUEST)
 
         if banco_emisor_code == MI_BANCO_DEFAULT:
-            # --- PROCESAMIENTO INTERNO (Nosotros somos el emisor también) ---
             return self.procesar_pago_interno(data, comercio)
         else:
-            # --- ENRUTAMIENTO A OTRO BANCO ---
             return self.enrutar_pago_externo(data, comercio, banco_emisor_code)
 
     def procesar_pago_interno(self, data, comercio):
-        """ Lógica cuando el comprador y el comercio son de MI banco """
         try:
-            # Buscamos la tarjeta en nuestra base de datos
             tarjeta = Tarjeta.objects.get(numero=data['numero_tarjeta'])
-            
             if not tarjeta.estado:
-                return error_response("IERROR_1003", "Error: Su tarjeta se encuentra inoperativa.")
-
+                return error_response("IERROR_1003", "Tarjeta inoperativa.")
+            
             cuenta_cliente = tarjeta.cuenta
-            
-            # Validaciones de seguridad básicas
             if tarjeta.cvv != data['cvc_tarjeta']:
-                 return error_response("IERROR_1005", "Error: Datos de seguridad inválidos (CVV).")
-            
-            # Validar Saldo
+                 return error_response("IERROR_1005", "CVV inválido.")
             if cuenta_cliente.saldo < data['monto_pagado']:
-                return error_response("IERROR_1004", "Error: Usted ha sobrepasado su límite de crédito.")
+                return error_response("IERROR_1004", "Saldo insuficiente.")
 
-            # TRANSACCIÓN ATÓMICA (Descontar y Acreditar)
             with transaction.atomic():
                 cuenta_cliente.saldo -= data['monto_pagado']
                 cuenta_cliente.save()
@@ -207,38 +206,26 @@ class ProcesarPagoComercioView(APIView):
                 comercio.cuenta.saldo += data['monto_pagado']
                 comercio.cuenta.save()
                 
-                # Registrar Historial
                 Transaccion.objects.create(
-                    tipo='PAGO_COMERCIO',
-                    monto=data['monto_pagado'],
-                    cuenta_origen=cuenta_cliente,
-                    cuenta_destino=comercio.cuenta,
-                    estado='APROBADO',
-                    codigo_respuesta='201',
-                    banco_emisor_id=settings.MI_CODIGO_BANCO
+                    tipo='PAGO_COMERCIO', monto=data['monto_pagado'],
+                    cuenta_origen=cuenta_cliente, cuenta_destino=comercio.cuenta,
+                    estado='APROBADO', codigo_respuesta='201', banco_emisor_id=settings.MI_CODIGO_BANCO,
+                    referencia_externa=data['numero_transaccion'] # Guardamos ID para idempotencia
                 )
-                
-                # LOG DE AUDITORÍA: Confirmación visual en consola del descuento de saldo
-                logger.info(f"AUDITORIA PAGO: -{data['monto_pagado']} a Cuenta {cuenta_cliente.numero_cuenta} | Nuevo Saldo: {cuenta_cliente.saldo}")
 
             return Response(status=status.HTTP_201_CREATED)
 
         except Tarjeta.DoesNotExist:
-             return error_response("IERROR_1005", "Error: No se encontró ninguna tarjeta con los datos provistos.")
+             return error_response("IERROR_1005", "Tarjeta no encontrada.")
 
     def enrutar_pago_externo(self, data, comercio, codigo_banco_destino):
-        """ Lógica blindada para interoperabilidad (Off-Us) """
-        # Filtro de Auto-Llamada: Prevenir que el banco se llame a sí mismo en un bucle.
-        # Si por error de enrutamiento se intenta procesar un pago propio como externo, se redirige a la lógica interna.
         if codigo_banco_destino == MI_BANCO_DEFAULT:
             return self.procesar_pago_interno(data, comercio)
 
         try:
-            # 1. Buscar banco en directorio
             banco_destino = Directorio.objects.get(codigo=codigo_banco_destino, tipo='BANCO')
             url_destino = f"{banco_destino.api_url.rstrip('/')}/autorizar_pago/"
             
-            # 2. Preparar Payload (Casteo estricto a float para JSON)
             payload_banco = {
                 "numero_transaccion": str(data['numero_transaccion']),
                 "codigo_banco_emisor_tarjeta": str(data['codigo_banco_emisor_tarjeta']),
@@ -247,14 +234,11 @@ class ProcesarPagoComercioView(APIView):
                 "fecha_vencimiento_tarjeta": str(data['fecha_vencimiento_tarjeta']),
                 "codigo_banco_comercio_receptor": str(data['codigo_banco_comercio_receptor']),
                 "numero_cuenta_comercio_receptor": str(comercio.cuenta.numero_cuenta),
-                "monto_pagado": float(data['monto_pagado']), # Convertido a float para serialización JSON
+                "monto_pagado": float(data['monto_pagado']),
             }
-            # 3. Headers de Seguridad (Preparamos para el token del aliado)
-            headers = {
-                "Content-Type": "application/json",
-                # "Authorization": "Bearer TOKEN_DEL_ALIADO"  <-- Descomentar cuando lo tengas
-            }
-            # 4. Intento de Conexión con manejo de errores JSON
+            
+            headers = {"Content-Type": "application/json"}
+            
             try:
                 response = requests.post(url_destino, json=payload_banco, headers=headers, timeout=15)
                 
@@ -262,235 +246,102 @@ class ProcesarPagoComercioView(APIView):
                     with transaction.atomic():
                         comercio.cuenta.saldo += data['monto_pagado']
                         comercio.cuenta.save()
+                        Transaccion.objects.create(
+                            tipo='PAGO_COMERCIO', monto=data['monto_pagado'],
+                            cuenta_destino=comercio.cuenta, estado='APROBADO', codigo_respuesta='201', 
+                            banco_emisor_id=codigo_banco_destino, referencia_externa=data['numero_transaccion']
+                        )
                     return Response({"message": "Pago aprobado por banco externo"}, status=status.HTTP_201_CREATED)
                 
-                # Manejo robusto de errores del emisor
-                try:
-                    error_json = response.json()
-                    msg = error_json.get('error', {}).get('message', 'Transacción declinada por el banco emisor.')
-                except:
-                    msg = f"El banco emisor respondió con estado {response.status_code}."
-                    
-                return error_response("IERROR_1002", msg, http_status=status.HTTP_402_PAYMENT_REQUIRED)
-            except requests.exceptions.RequestException as e:
-                logger.error(f"Timeout o error de red con Banco {codigo_banco_destino}: {str(e)}")
-                return error_response("IERROR_1002", "No se pudo establecer conexión con el banco emisor (Timeout).")
+                return error_response("IERROR_1002", "Transacción declinada por el banco emisor.", http_status=status.HTTP_402_PAYMENT_REQUIRED)
+            except requests.exceptions.RequestException:
+                return error_response("IERROR_1002", "Timeout conectando con banco emisor.")
         except Directorio.DoesNotExist:
-            return error_response("IERROR_1002", f"El banco {codigo_banco_destino} no está registrado en el directorio.")
-        except Exception as e:
-            logger.error(f"Fallo catastrófico en enrutamiento: {str(e)}", exc_info=True)
-            return error_response("IERROR_500", "Error interno en el módulo de enrutamiento.")
+            return error_response("IERROR_1002", f"Banco {codigo_banco_destino} no registrado.")
 
 
-
-from django.db.models import Q
-
-# ============================================================================
-# VISTA 3: AUTORIZAR PAGO BANCO (ROL EMISOR - SPRINT 2)
-# Otro banco nos pide autorizar un pago de NUESTRA tarjeta
-# ============================================================================
+@method_decorator(csrf_exempt, name='dispatch')
 class AutorizarPagoBancoView(APIView):
-    # 1. SEGURIDAD: Exigimos Token JWT. El banco aliado debe autenticarse.
-    permission_classes = [IsAuthenticated]
+    """ Recibe peticiones de otros bancos para cobrar a nuestras tarjetas (Rol Emisor). """
+    permission_classes = [AllowAny]
 
     def post(self, request):
         serializer = AutorizacionBancoSerializer(data=request.data)
         if not serializer.is_valid():
              return error_response("IERROR_000", "Formato JSON inválido", status.HTTP_400_BAD_REQUEST)
+        
         data = serializer.validated_data
+        
+        # Idempotencia
+        if Transaccion.objects.filter(referencia_externa=data['numero_transaccion']).exists():
+            return Response({"message": "Transacción autorizada exitosamente"}, status=status.HTTP_201_CREATED)
+
         try:
-            # 2. Buscar la Tarjeta
             tarjeta = Tarjeta.objects.get(numero=data['numero_tarjeta'])
-            
-            # 3. Validar Estado Operativo
             if not tarjeta.estado:
-                 return error_response("IERROR_1003", "Error: Su tarjeta se encuentra inoperativa.")
-            
-            # 4. Validar Seguridad (CVV)
+                 return error_response("IERROR_1003", "Tarjeta inoperativa.")
             if tarjeta.cvv != data['cvc_tarjeta']:
-                return error_response("IERROR_1005", "Error: Datos de seguridad inválidos.")
-            # 5. Validar Saldo
+                return error_response("IERROR_1005", "CVV inválido.")
+            
             cuenta = tarjeta.cuenta
             if cuenta.saldo < data['monto_pagado']:
-                 return error_response("IERROR_1004", "Error: Usted ha sobrepasado su límite de crédito.")
-            # 6. TRANSACCIÓN ATÓMICA: Todo o Nada
+                 return error_response("IERROR_1004", "Límite de crédito sobrepasado.")
+            
             with transaction.atomic():
                 cuenta.saldo -= data['monto_pagado']
                 cuenta.save()
                 Transaccion.objects.create(
-                    tipo='PAGO_INTERBANCARIO',
-                    monto=data['monto_pagado'],
-                    cuenta_origen=cuenta,
-                    estado='APROBADO',
-                    codigo_respuesta='201',
-                    banco_emisor_id=MI_BANCO_DEFAULT,
-                    mensaje_error=f"Autorizado para comercio ext: {data['codigo_banco_comercio_receptor']}"
+                    tipo='PAGO_INTERBANCARIO', monto=data['monto_pagado'], cuenta_origen=cuenta,
+                    estado='APROBADO', codigo_respuesta='201', banco_emisor_id=MI_BANCO_DEFAULT,
+                    referencia_externa=data['numero_transaccion'],
+                    mensaje_error=f"Aprobado para comercio: {data['codigo_banco_comercio_receptor']}"
                 )
             
-            logger.info(f"AUDITORIA EMISOR: Aprobado pago de {data['monto_pagado']} a comercio {data['codigo_banco_comercio_receptor']}")
             return Response({"message": "Transacción autorizada exitosamente"}, status=status.HTTP_201_CREATED)
         except Tarjeta.DoesNotExist:
-            return error_response("IERROR_1005", "Error: No se encontró ninguna tarjeta con los datos provistos.")
-        except Exception as e:
-            logger.error(f"Fallo en autorización de pago externo: {str(e)}", exc_info=True)
-            return error_response("IERROR_500", "Error interno al procesar la autorización.")
+            return error_response("IERROR_1005", "Tarjeta no encontrada.")
+
 
 # ============================================================================
-# VISTA 4: HISTORIAL DE TRANSACCIONES
+# VISTAS DE ADMINISTRACIÓN
 # ============================================================================
-class TransaccionListView(APIView):
-    """
-    Devuelve todas las transacciones asociadas a las cuentas del usuario logueado.
-    """
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        # Filtramos transacciones donde el usuario es origen O destino.
-        # Usamos Q para consultas complejas (OR).
-        user_accounts = Cuenta.objects.filter(cliente__user=request.user)
-        transactions = Transaccion.objects.filter(
-            Q(cuenta_origen__in=user_accounts) | Q(cuenta_destino__in=user_accounts)
-        ).distinct().order_by('-fecha') # Ordenamos por fecha, más reciente primero
-
-        # Pasamos el 'context' para que el serializador pueda acceder al request.user
-        serializer = TransaccionSerializer(transactions, many=True, context={'request': request})
-        return Response(serializer.data)
-
-# ============================================================================
-# VISTA 5: RECLAMAR BONO DE BIENVENIDA (CAMPAÑA)
-# ============================================================================
-class ClaimBonusView(APIView):
-    """
-    Endpoint para que un usuario reclame su bono de bienvenida.
-    """
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request):
-        cliente = request.user.cliente
-        
-        # 1. Validar que el bono no haya sido reclamado ya
-        if cliente.bono_reclamado:
-            return Response(
-                {"error": "El bono de bienvenida ya ha sido reclamado."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-            
-        # 2. Encontrar la primera cuenta del cliente para acreditar el bono
-        cuenta_a_creditar = cliente.cuentas.first()
-        if not cuenta_a_creditar:
-            return Response(
-                {"error": "No se encontró una cuenta para acreditar el bono."},
-                status=status.HTTP_404_NOT_FOUND
-            )
-
-        # 3. Operación atómica para garantizar consistencia
-        with transaction.atomic():
-            # Acreditar saldo
-            cuenta_a_creditar.saldo += 1000.00
-            cuenta_a_creditar.save()
-
-            # Marcar bono como reclamado
-            cliente.bono_reclamado = True
-            cliente.save()
-
-            # Crear el registro de la transacción para el historial
-            Transaccion.objects.create(
-                tipo='TRANSFERENCIA',
-                monto=1000.00,
-                cuenta_destino=cuenta_a_creditar,
-                estado='APROBADO',
-                codigo_respuesta='00',
-                banco_emisor_id='WholaBank',
-                mensaje_error='¡Activaste tu Bono de Bienvenida!' # Nombre de la campaña
-            )
-
-        return Response(
-            {"message": "¡Felicidades! Has reclamado tu bono de 1000 Bs."},
-            status=status.HTTP_200_OK
-        )
-
-# ============================================================================
-# VISTA 4: VIsta de aministración
 class AdminDashboardView(APIView):
-    """
-    Vista exclusiva para administradores del banco.
-    Devuelve métricas globales, lista de clientes y directorio de bancos externos.
-    """
-    permission_classes = [IsAdminUser] # Solo usuarios con is_staff=True
+    permission_classes = [IsAdminUser]
 
     def get(self, request):
-        # 1. Resumen de Clientes (Optimizado con agregaciones y prefetch)
         clientes_qs = Cliente.objects.select_related('user').prefetch_related(
             models.Prefetch('cuentas', queryset=Cuenta.objects.all())
-        ).annotate(
-            saldo_total=Sum('cuentas__saldo')
-        )
+        ).annotate(saldo_total=Sum('cuentas__saldo'))
+        
+        lista_clientes = [{
+            "id": c.id, "nombre": f"{c.user.first_name} {c.user.last_name}",
+            "identidad": c.rif or c.cedula, "tipo": c.tipo_persona,
+            "saldo_total": c.saldo_total or 0, "cuentas": [cta.numero_cuenta for cta in c.cuentas.all()]
+        } for c in clientes_qs]
 
-        lista_clientes = []
-        for c in clientes_qs:
-            lista_clientes.append({
-                "id": c.id,
-                "nombre": f"{c.user.first_name} {c.user.last_name}",
-                "identidad": c.rif or c.cedula,
-                "tipo": c.tipo_persona,
-                "saldo_total": c.saldo_total or 0,
-                "cuentas": [cta.numero_cuenta for cta in c.cuentas.all()] # Usa datos prefetched
-            })
-
-        # 2. Directorio (OTROS BANCOS Y COMERCIOS)
         directorio = Directorio.objects.all().values('codigo', 'nombre', 'tipo', 'api_url')
-
-        # 3. Métricas (Optimizadas con agregaciones de la DB)
-        liquidez_total = Cuenta.objects.aggregate(total=Sum('saldo'))['total'] or 0
+        liquidez = Cuenta.objects.aggregate(total=Sum('saldo'))['total'] or 0
 
         stats = {
             "total_clientes": clientes_qs.count(),
             "total_bancos_conectados": Directorio.objects.filter(tipo='BANCO').count(),
             "total_comercios_externos": Directorio.objects.filter(tipo='COMERCIO').count(),
-            "liquidez_total": liquidez_total
+            "liquidez_total": liquidez
         }
-
-        return Response({
-            "stats": stats,
-            "clientes": lista_clientes,
-            "directorio": list(directorio) # Convertir a lista para serialización
-        })
-    
-# ============================================================================
-# VISTA 5: registro bancario
+        return Response({"stats": stats, "clientes": lista_clientes, "directorio": list(directorio)})
     
 class RegistroBancoAliadoView(APIView):
-    """
-    Permite al Administrador registrar nuevos bancos en el ecosistema
-    para futuros enrutamientos.
-    """
-    permission_classes = [IsAdminUser] # Solo Superusuarios
+    permission_classes = [IsAdminUser]
 
     def post(self, request):
         data = request.data
-        
-        # Validaciones
         if Directorio.objects.filter(codigo=data.get('codigo')).exists():
-            return error_response("IERROR_DIR_01", "Este código bancario ya está registrado.", status.HTTP_400_BAD_REQUEST)
-        
-        # Validar formato de URL básico
-        url = data.get('api_url', '')
-        if not url.startswith('http'):
-            return error_response("IERROR_DIR_02", "La URL debe comenzar con http:// o https://", status.HTTP_400_BAD_REQUEST)
-
+            return error_response("IERROR_DIR_01", "Código bancario registrado.", status.HTTP_400_BAD_REQUEST)
         try:
             nuevo_banco = Directorio.objects.create(
-                codigo=data['codigo'],
-                nombre=data['nombre'],
-                rif=data['rif'],
-                tipo='BANCO', # Forzamos que sea BANCO
-                api_url=url
+                codigo=data['codigo'], nombre=data['nombre'], rif=data.get('rif'),
+                tipo='BANCO', api_url=data.get('api_url', '')
             )
-            
-            return Response({
-                "message": f"Banco {nuevo_banco.nombre} registrado correctamente.",
-                "codigo": nuevo_banco.codigo
-            }, status=status.HTTP_201_CREATED)
-
+            return Response({"message": f"Banco {nuevo_banco.nombre} registrado.", "codigo": nuevo_banco.codigo}, status=status.HTTP_201_CREATED)
         except Exception as e:
             return error_response("IERROR_DIR_99", f"Error interno: {str(e)}", status.HTTP_500_INTERNAL_SERVER_ERROR)
