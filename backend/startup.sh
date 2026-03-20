@@ -9,8 +9,7 @@ echo "Directorio de trabajo actual: $(pwd)"
 
 # Ejecuta las migraciones de la base de datos para asegurar que el esquema esté actualizado.
 echo "Ejecutando migraciones de base de datos..."
-# Generamos el archivo de migración para detectar el cambio de default=1000.00
-python manage.py makemigrations
+# En producción, solo aplicamos migraciones existentes, no las creamos.
 python manage.py migrate --noinput
 
 # Ejecuta la carga masiva de aliados (solo si la tabla está vacía, validado internamente).
@@ -26,46 +25,18 @@ python manage.py collectstatic --noinput
 echo "Asegurando la existencia del superusuario..."
 python manage.py create_superuser
 
-# Inicia el servidor Gunicorn en segundo plano.
+# Inicia el servidor Gunicorn en segundo plano para permitir la ejecución del warmup.
+echo "Iniciando servidor Gunicorn en segundo plano..."
+gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 2 --timeout 600 --log-level=info &
 
-#echo "Iniciando servidor Gunicorn en segundo plano con preload..."
+# Guarda el PID de Gunicorn para poder esperar por él más tarde.
+GUNICORN_PID=$!
 
-# Inicia el servidor Gunicorn en primer plano tomando el control del contenedor (Recomendado para Azure)
-echo "Iniciando servidor Gunicorn de forma directa..."
-exec gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 2 --timeout 600 --log-level=info
-
-#gunicorn config.wsgi:application --bind 0.0.0.0:8000 \
-
-    #--workers 2 \
-
-    #--preload \
-
-    #--timeout 600 \
-
-    #--log-level=info \
-
-    #--error-logfile /home/LogFiles/gunicorn_error.log &
-
-
-
-# Guardar el ID del proceso de Gunicorn
-
-#GUNICORN_PID=$!
-
-
-
-# Ejecutar el script de calentamiento para esperar a que la app esté lista.
-
-# El script está en el directorio raíz, un nivel por encima de 'backend'.
-
-#echo "Ejecutando script de calentamiento..."
-
+# Ejecuta el script de calentamiento.
+echo "Ejecutando script de calentamiento..."
 /bin/bash ../warmup.sh
 
-
-
-# Esperar a que el proceso de Gunicorn termine.
-
-# Esto asegura que el contenedor no se cierre mientras Gunicorn se ejecuta.
-
-#wait $GUNICORN_PID
+# Espera a que Gunicorn termine. Esto es crucial para que el contenedor no se cierre.
+echo "Esperando a que Gunicorn finalice..."
+wait $GUNICORN_PID
+echo "Gunicorn ha finalizado."
