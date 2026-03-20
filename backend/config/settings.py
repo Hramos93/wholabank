@@ -213,5 +213,5 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 # --- CONFIGURACIONES PERSONALIZADAS DE LA APP ---
 MI_CODIGO_BANCO = os.environ.get("MI_CODIGO_BANCO", "0001")
 MI_CODIGO_AGENCIA = os.environ.get("MI_CODIGO_AGENCIA", "0001")
-MI_BIN_TARJETA = os.environ.get("MI_BIN_TARJETA", "00001")
+MI_BIN_TARJETA = os.environ.get("MI_BIN_TARJETA", "0001")
 INTERBANK_API_KEY = os.environ.get("INTERBANK_API_KEY") # Para la comunicación segura entre bancos
