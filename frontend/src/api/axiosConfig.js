@@ -1,39 +1,36 @@
 // frontend/src/api/axiosConfig.js
-
 import axios from 'axios';
 
-// Creamos una instancia centralizada de Axios LOCALLLLL
-//const api = axios.create({
-//    baseURL: 'http://127.0.0.1:8000/api/', // La URL de tu Django
-//    headers: {
-//        'Content-Type': 'application/json',
-//    }
-//});
+// 1. Obtenemos la URL del entorno
+const rawApiUrl = import.meta.env.DEV ? '/api/' : (import.meta.env.VITE_API_URL || '/api/');
+
+// 2. BLINDAJE: Aseguramos que la base SIEMPRE termine en '/'
+const safeBaseURL = rawApiUrl.endsWith('/') ? rawApiUrl : `${rawApiUrl}/`;
 
 const api = axios.create({
-    // En desarrollo (DEV), siempre usa el proxy relativo. 
-    // En producción, usa la variable de entorno o el proxy como fallback.
-    baseURL: import.meta.env.DEV ? '/api/' : (import.meta.env.VITE_API_URL || '/api/'),
+    baseURL: safeBaseURL,
     headers: {
         'Content-Type': 'application/json',
     }
 });
 
-
 // INTERCEPTOR: Se ejecuta antes de cada petición
-// Su función es inyectar el Token automáticamente si existe.
 api.interceptors.request.use(
     (config) => {
         const token = localStorage.getItem('access_token');
+        
         // Solo añade el token si existe Y la URL no es la de registro.
-        if (token && !config.url.includes('registro/')) {
-            // Si hay token, lo agregamos al header Authorization
-            // Formato estándar: "Bearer <token>"
+        // Convertimos a string por seguridad antes de usar .includes()
+        const urlString = config.url ? config.url.toString() : '';
+        
+        if (token && !urlString.includes('registro/')) {
             config.headers.Authorization = `Bearer ${token}`;
         }
         return config;
+    },
+    (error) => {
+        return Promise.reject(error);
     }
 );
 
-// AGREGA ESTA LÍNEA AL FINAL:
 export default api;
