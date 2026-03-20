@@ -27,6 +27,9 @@ class Cliente(models.Model):
     rif = models.CharField(max_length=20, unique=True)
     
     telefono = models.CharField(max_length=20)
+
+    # Flag para la campaña del bono de bienvenida
+    bono_reclamado = models.BooleanField(default=False)
     
     # Demográficos (Compartidos o adaptados)
     fecha_nacimiento = models.DateField(null=True) # Para empresas será Fecha Constitución
@@ -49,7 +52,7 @@ class Cuenta(models.Model):
 
     cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE, related_name='cuentas')
     numero_cuenta = models.CharField(max_length=20, unique=True, editable=False)
-    saldo = models.DecimalField(max_digits=15, decimal_places=2, default=1000.00)
+    saldo = models.DecimalField(max_digits=15, decimal_places=2, default=0.00)
     tipo_cuenta = models.CharField(max_length=20, choices=TIPO_CUENTA_CHOICES, default='CORRIENTE') # Nuevo campo
     created_at = models.DateTimeField(auto_now_add=True)
 

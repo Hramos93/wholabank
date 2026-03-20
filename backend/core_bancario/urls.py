@@ -7,7 +7,8 @@ from .views import (
     AutorizarPagoBancoView,
     AdminDashboardView,
     RegistroBancoAliadoView,
-    TransaccionListView
+    TransaccionListView,
+    ClaimBonusView
 )
 
 urlpatterns = [
@@ -21,8 +22,11 @@ urlpatterns = [
     path('procesar_pago_comercio/', ProcesarPagoComercioView.as_view(), name='procesar_pago_comercio'),
     path('autorizar_pago/', AutorizarPagoBancoView.as_view(), name='autorizar_pago'),
 
-    # 4. Historial de Transacciones (NUEVO)
+    # 4. Historial de Transacciones
     path('transacciones/', TransaccionListView.as_view(), name='transacciones'),
+
+    # 5. Reclamo de Bono (CAMPAÑA)
+    path('reclamar-bono/', ClaimBonusView.as_view(), name='reclamar-bono'),
 
     path('admin-panel/', AdminDashboardView.as_view(), name='admin_panel'),
     path('admin/registrar-banco/', RegistroBancoAliadoView.as_view(), name='registrar_banco'),

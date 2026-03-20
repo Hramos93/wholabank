@@ -8,25 +8,34 @@ import {
 } from 'lucide-react';
 import CvvDisplay from '../components/CvvDisplay';
 import TransactionHistory from '../components/TransactionHistory';
+import ClaimBonusButton from '../components/ClaimBonusButton';
 
 const Dashboard = () => {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
 
+    // Se convierte en una función reutilizable para poder recargar los datos
+    const fetchData = async () => {
+        try {
+            const response = await api.get('dashboard/');
+            setData(response.data);
+        } catch (error) {
+            if (error.response?.status === 401) navigate('/login');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const response = await api.get('dashboard/');
-                setData(response.data);
-            } catch (error) {
-                if (error.response?.status === 401) navigate('/login');
-            } finally {
-                setLoading(false);
-            }
-        };
         fetchData();
     }, [navigate]);
+
+    const handleBonusClaimed = () => {
+        // Recargamos todos los datos del dashboard para reflejar el nuevo saldo y
+        // ocultar el botón de reclamo.
+        fetchData();
+    };
 
     if (loading) return (
         <div className="h-screen flex items-center justify-center bg-slate-100 text-blue-900">
@@ -71,6 +80,9 @@ const Dashboard = () => {
                     <h1 className="text-2xl font-bold text-gray-800">Resumen Financiero</h1>
                     <p className="text-gray-500 text-sm">Consulta tus productos y movimientos</p>
                 </header>
+
+                {/* === BOTÓN DE CAMPAÑA (CONDICIONAL) === */}
+                {!data.bono_reclamado && <ClaimBonusButton onBonusClaimed={handleBonusClaimed} />}
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     

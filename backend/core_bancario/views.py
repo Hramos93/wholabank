@@ -357,6 +357,59 @@ class TransaccionListView(APIView):
         return Response(serializer.data)
 
 # ============================================================================
+# VISTA 5: RECLAMAR BONO DE BIENVENIDA (CAMPAÑA)
+# ============================================================================
+class ClaimBonusView(APIView):
+    """
+    Endpoint para que un usuario reclame su bono de bienvenida.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        cliente = request.user.cliente
+        
+        # 1. Validar que el bono no haya sido reclamado ya
+        if cliente.bono_reclamado:
+            return Response(
+                {"error": "El bono de bienvenida ya ha sido reclamado."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+        # 2. Encontrar la primera cuenta del cliente para acreditar el bono
+        cuenta_a_creditar = cliente.cuentas.first()
+        if not cuenta_a_creditar:
+            return Response(
+                {"error": "No se encontró una cuenta para acreditar el bono."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # 3. Operación atómica para garantizar consistencia
+        with transaction.atomic():
+            # Acreditar saldo
+            cuenta_a_creditar.saldo += 1000.00
+            cuenta_a_creditar.save()
+
+            # Marcar bono como reclamado
+            cliente.bono_reclamado = True
+            cliente.save()
+
+            # Crear el registro de la transacción para el historial
+            Transaccion.objects.create(
+                tipo='TRANSFERENCIA',
+                monto=1000.00,
+                cuenta_destino=cuenta_a_creditar,
+                estado='APROBADO',
+                codigo_respuesta='00',
+                banco_emisor_id='WholaBank',
+                mensaje_error='¡Activaste tu Bono de Bienvenida!' # Nombre de la campaña
+            )
+
+        return Response(
+            {"message": "¡Felicidades! Has reclamado tu bono de 1000 Bs."},
+            status=status.HTTP_200_OK
+        )
+
+# ============================================================================
 # VISTA 4: VIsta de aministración
 class AdminDashboardView(APIView):
     """

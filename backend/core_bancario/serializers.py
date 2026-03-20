@@ -78,10 +78,11 @@ class DashboardSerializer(serializers.ModelSerializer):
     cuentas = CuentaSerializer(many=True, read_only=True)
     nombre_usuario = serializers.CharField(source='user.first_name', read_only=True)
     is_admin = serializers.BooleanField(source='user.is_staff', read_only=True)
+    bono_reclamado = serializers.BooleanField(read_only=True)
     
     class Meta:
         model = Cliente
-        fields = ['nombre_usuario', 'cedula', 'cuentas', 'is_admin']
+        fields = ['nombre_usuario', 'cedula', 'cuentas', 'is_admin', 'bono_reclamado']
 
 # Serializador para el CASO 1: Comercio -> Banco Adquiriente (Nosotros)
 class PagoComercioSerializer(serializers.Serializer):
@@ -177,18 +178,7 @@ class RegistroClienteSerializer(serializers.Serializer):
             )
             tarjeta = Tarjeta.objects.create(cuenta=cuenta)
 
-            # 4. Registrar la transacción del bono de bienvenida
-            Transaccion.objects.create(
-                tipo='TRANSFERENCIA', # Opcional: Podrías añadir 'BONO' a TIPO_CHOICES en el modelo
-                monto=1000.00,
-                cuenta_destino=cuenta,
-                estado='APROBADO',
-                codigo_respuesta='00', # Código para transacciones internas exitosas
-                banco_emisor_id='WholaBank', # Identificador para nuestro propio banco
-                mensaje_error='Bono de Bienvenida'
-            )
-
-            # 5. Si es Jurídico, afiliarlo como Comercio automáticamente
+            # 4. Si es Jurídico, afiliarlo como Comercio automáticamente
             if tipo == 'JURIDICO':
                 codigo_comercio = f"C-{rif_final}"
                 Comercio.objects.create(
