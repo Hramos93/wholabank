@@ -2,12 +2,14 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <!-- Usamos una ruta relativa para que Vite la resuelva correctamente con la opción 'base' -->
+    <link rel="icon" type="image/svg+xml" href="./vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>frontend</title>
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
+    <!-- La ruta relativa al entrypoint es crucial para que Vite construya las rutas de assets correctamente -->
+    <script type="module" src="./src/main.jsx"></script>
   </body>
 </html>

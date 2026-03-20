@@ -19,7 +19,7 @@ python manage.py cargar_directorio
 # Recolecta todos los archivos estáticos (React, etc.) en la carpeta STATIC_ROOT.
 # La opción --noinput evita prompts y --clear asegura una recolección limpia.
 echo "Ejecutando collectstatic..."
-python manage.py collectstatic --noinput
+python manage.py collectstatic --noinput --clear
 
 # Crea el superusuario (el script interno comprueba si ya existe para no duplicarlo).
 echo "Asegurando la existencia del superusuario..."
