@@ -119,7 +119,7 @@ class ClaimBonusView(APIView):
     def post(self, request):
         try:
             # 1. Importación local a prueba de fallos (Garantiza que Decimal exista)
-            from decimal import Decimal
+            
 
             # 2. Validación: ¿El usuario actual es un cliente o es el superadmin?
             if not hasattr(request.user, 'cliente'):
@@ -138,9 +138,9 @@ class ClaimBonusView(APIView):
                 return Response({"error": "No se encontró una cuenta bancaria activa."}, status=status.HTTP_404_NOT_FOUND)
 
             with transaction.atomic():
-                bono_monto = Decimal('1000.00')
+                
 
-                cuenta_a_creditar.saldo += bono_monto
+                cuenta_a_creditar.saldo += Decimal('1000.00')
                 cuenta_a_creditar.save()
                 
                 cliente.bono_reclamado = True
@@ -148,7 +148,7 @@ class ClaimBonusView(APIView):
 
                 Transaccion.objects.create(
                     tipo='TRANSFERENCIA', 
-                    monto=bono_monto, 
+                    monto='1000.00', 
                     cuenta_destino=cuenta_a_creditar,
                     estado='APROBADO', 
                     codigo_respuesta='00', 

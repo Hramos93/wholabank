@@ -28,27 +28,29 @@ python manage.py create_superuser
 
 # Inicia el servidor Gunicorn en segundo plano.
 
-echo "Iniciando servidor Gunicorn en segundo plano con preload..."
+#echo "Iniciando servidor Gunicorn en segundo plano con preload..."
 
+# Inicia el servidor Gunicorn en primer plano tomando el control del contenedor (Recomendado para Azure)
+echo "Iniciando servidor Gunicorn de forma directa..."
+exec gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 2 --timeout 600 --log-level=info
 
+#gunicorn config.wsgi:application --bind 0.0.0.0:8000 \
 
-gunicorn config.wsgi:application --bind 0.0.0.0:8000 \
+    #--workers 2 \
 
-    --workers 2 \
+    #--preload \
 
-    --preload \
+    #--timeout 600 \
 
-    --timeout 600 \
+    #--log-level=info \
 
-    --log-level=info \
-
-    --error-logfile /home/LogFiles/gunicorn_error.log &
+    #--error-logfile /home/LogFiles/gunicorn_error.log &
 
 
 
 # Guardar el ID del proceso de Gunicorn
 
-GUNICORN_PID=$!
+#GUNICORN_PID=$!
 
 
 
@@ -56,7 +58,7 @@ GUNICORN_PID=$!
 
 # El script está en el directorio raíz, un nivel por encima de 'backend'.
 
-echo "Ejecutando script de calentamiento..."
+#echo "Ejecutando script de calentamiento..."
 
 /bin/bash ../warmup.sh
 
@@ -66,4 +68,4 @@ echo "Ejecutando script de calentamiento..."
 
 # Esto asegura que el contenedor no se cierre mientras Gunicorn se ejecuta.
 
-wait $GUNICORN_PID
+#wait $GUNICORN_PID
