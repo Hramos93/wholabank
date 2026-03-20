@@ -6,6 +6,7 @@ import {
     LogOut, CreditCard, DollarSign, Activity, 
     ChevronRight, Wallet, ArrowUpRight, ArrowDownLeft 
 } from 'lucide-react';
+import CvvDisplay from '../components/CvvDisplay';
 
 const Dashboard = () => {
     const [data, setData] = useState(null);
@@ -133,7 +134,7 @@ const Dashboard = () => {
                                                         </div>
                                                         <div>
                                                             <span className="block text-[10px] opacity-70">CVC</span>
-                                                            ***
+                                                            <CvvDisplay cvv={t.cvc} />
                                                         </div>
                                                     </div>
                                                 </div>
