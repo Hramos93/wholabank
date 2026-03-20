@@ -110,38 +110,62 @@ class TransaccionListView(APIView):
         serializer = TransaccionSerializer(transactions, many=True, context={'request': request})
         return Response(serializer.data)
 
+# ============================================================================
+# VISTA 5: RECLAMAR BONO DE BIENVENIDA (CAMPAÑA)
+# ============================================================================
 class ClaimBonusView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        cliente = request.user.cliente
-        if cliente.bono_reclamado:
-            return Response({"error": "Bono ya reclamado."}, status=status.HTTP_400_BAD_REQUEST)
-            
-        cuenta_a_creditar = cliente.cuentas.first()
-        if not cuenta_a_creditar:
-            return Response({"error": "No se encontró cuenta."}, status=status.HTTP_404_NOT_FOUND)
+        try:
+            # 1. Importación local a prueba de fallos (Garantiza que Decimal exista)
+            from decimal import Decimal
 
-        with transaction.atomic():
-            # EL ARREGLO ESTÁ AQUÍ: Usar Decimal con un string adentro
-            bono_monto = Decimal('1000.00')
+            # 2. Validación: ¿El usuario actual es un cliente o es el superadmin?
+            if not hasattr(request.user, 'cliente'):
+                return Response(
+                    {"error": "Tu usuario (Admin) no tiene un perfil de cliente bancario para recibir bonos."}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
 
-            cuenta_a_creditar.saldo += bono_monto
-            cuenta_a_creditar.save()
-            cliente.bono_reclamado = True
-            cliente.save()
+            cliente = request.user.cliente
 
-            Transaccion.objects.create(
-                tipo='TRANSFERENCIA', 
-                monto=bono_monto, 
-                cuenta_destino=cuenta_a_creditar,
-                estado='APROBADO', 
-                codigo_respuesta='00', 
-                banco_emisor_id='WholaBank',
-                mensaje_error='¡Activaste tu Bono de Bienvenida!' 
+            if cliente.bono_reclamado:
+                return Response({"error": "Bono ya reclamado."}, status=status.HTTP_400_BAD_REQUEST)
+                
+            cuenta_a_creditar = cliente.cuentas.first()
+            if not cuenta_a_creditar:
+                return Response({"error": "No se encontró una cuenta bancaria activa."}, status=status.HTTP_404_NOT_FOUND)
+
+            with transaction.atomic():
+                bono_monto = Decimal('1000.00')
+
+                cuenta_a_creditar.saldo += bono_monto
+                cuenta_a_creditar.save()
+                
+                cliente.bono_reclamado = True
+                cliente.save()
+
+                Transaccion.objects.create(
+                    tipo='TRANSFERENCIA', 
+                    monto=bono_monto, 
+                    cuenta_destino=cuenta_a_creditar,
+                    estado='APROBADO', 
+                    codigo_respuesta='00', 
+                    banco_emisor_id='0001', # Ajustado a 4 dígitos por seguridad del modelo
+                    mensaje_error='¡Activaste tu Bono de Bienvenida!' 
+                )
+
+            return Response({"message": "¡Felicidades! Has reclamado tu bono."}, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            # 3. CAPTURA DEL ERROR REAL: Esto enviará el fallo exacto a tu SweetAlert en React
+            import traceback
+            logger.error(f"Error en Bono: {traceback.format_exc()}")
+            return Response(
+                {"error": f"Error interno de Python: {str(e)}"}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-
-        return Response({"message": "¡Felicidades! Has reclamado tu bono de 1.000 Bs."}, status=status.HTTP_200_OK)
 
 
 # ============================================================================
