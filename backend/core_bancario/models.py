@@ -88,21 +88,14 @@ class Tarjeta(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.numero:
-            # --- ESTRUCTURA ISO/IEC 7812 (16 Dígitos) ---
+            # --- Generación de Número de Tarjeta ---
+            # 1. Prefijo del banco (4 dígitos)
+            prefix = settings.MI_CODIGO_BANCO
             
-            # 1. Identificador de Industria (1): "5" para Mastercard
-            industry = "5"
+            # 2. Número de cuenta individual (12 dígitos aleatorios)
+            account_id = str(random.randint(1, 999999999999)).zfill(12)
             
-            # 2. BIN/IIN (5): Identificador de nuestro banco (00001)
-            bin_code = settings.MI_BIN_TARJETA
-            
-            # 3. Cuenta Individual (9 dígitos aleatorios)
-            account_id = str(random.randint(1, 999999999)).zfill(9)
-            
-            # 4. Dígito Verificador (1): Hardcodeado a "0" según instrucción
-            check_digit = "0"
-            
-            self.numero = f"{industry}{bin_code}{account_id}{check_digit}"
+            self.numero = f"{prefix}{account_id}"
 
             # --- SEGURIDAD ---
             # CVV: 3 dígitos aleatorios (simulación criptográfica)

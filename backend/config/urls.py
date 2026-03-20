@@ -16,7 +16,7 @@ urlpatterns = [
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     
     # AQUÍ se conectan tus rutas. Fíjate que diga 'api/'
-    path('api/', include('core_bancario.urls')),
+    path('api/v1/', include('core_bancario.urls')),
 
     # RUTA CATCH-ALL: Cualquier otra ruta que no sea de la API será manejada por React.
     re_path(r'^.*$', FrontendAppView.as_view(), name='frontend_app'),

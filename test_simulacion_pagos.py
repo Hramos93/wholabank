@@ -4,7 +4,7 @@ import string
 import time
 
 # BASE_URL = "https://wholabank-app-fghqdsdrb5f6a4bw.canadacentral-01.azurewebsites.net/api"
-BASE_URL = "http://127.0.0.1:8000/api" # Descomentar para pruebas locales
+BASE_URL = "http://127.0.0.1:8000/api/v1" # Descomentar para pruebas locales
 
 def random_str(length=6):
     return ''.join(random.choices(string.ascii_lowercase + string.digits, k=length))
@@ -48,7 +48,7 @@ def run_audit():
 
     # 3. LOGIN PARA OBTENER DATOS DE TARJETA (CVV)
     print("[3] Iniciando sesión para obtener credenciales de tarjeta...")
-    resp_login = requests.post(f"{BASE_URL}/token/", json={
+    resp_login = requests.post(f"http://127.0.0.1:8000/api/token/", json={
         "username": username_cliente,
         "password": password_cliente
     })
