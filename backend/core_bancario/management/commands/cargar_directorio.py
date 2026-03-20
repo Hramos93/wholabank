@@ -72,7 +72,7 @@ class Command(BaseCommand):
                             datos_registro = {
                                 'username': row['nombre'].lower().replace(" ", "_"),
                                 'email': f"contacto@{row['nombre'].lower().replace(' ', '')}.com",
-                                'password': f"{row['codigocodigo']}Test2026.",
+                                'password': f"{row['codigo']}Test2026.",
                                 'nombre_completo': row['nombre'], # Asegúrate que este campo exista en tu CSV
                                 'tipo_persona': 'JURIDICO',
                                 'rif': rif_corregido,

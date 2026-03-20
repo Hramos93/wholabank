@@ -12,5 +12,14 @@ export default defineConfig({
         changeOrigin: true,
       }
     }
+  },
+  // --- CONFIGURACIÓN PARA PRODUCCIÓN ---
+  build: {
+    // Directorio de salida (por defecto es 'dist', lo dejamos así)
+    outDir: 'dist',
+    // La clave de la solución: Le decimos a Vite que todos los assets
+    // (CSS, JS, imágenes) deben tener el prefijo '/static/' en sus rutas.
+    // Esto alinea el build de React con la configuración STATIC_URL de Django.
+    base: '/static/',
   }
 })
