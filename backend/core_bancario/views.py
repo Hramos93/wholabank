@@ -37,6 +37,14 @@ MAPEO_BANCOS = {
     "BANCO_5": "0005", "0005": "0005"
 }
 
+# --- MAPEO INVERSO (B2B) ---
+# Para cumplir con el formato estricto de los otros bancos en peticiones salientes
+FORMATO_EXTERNO_BANCOS = {
+    "0001": "BANCO_1", "BANCO_1": "BANCO_1",
+    "0002": "BANCO_2", "BANCO_2": "BANCO_2",
+    "0005": "BANCO_5", "BANCO_5": "BANCO_5"
+}
+
 # --- UTILERÍA ---
 def error_response(code, message, http_status=status.HTTP_404_NOT_FOUND):
     return Response({"error": {"code": code, "message": message}}, status=http_status)
