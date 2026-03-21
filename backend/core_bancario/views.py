@@ -262,6 +262,10 @@ class ProcesarPagoComercioView(APIView):
             banco_destino = Directorio.objects.get(codigo=codigo_banco_destino, tipo='BANCO')
             url_destino = f"{banco_destino.api_url.rstrip('/')}/autorizar_pago/"
             
+            # --- CASO ESPECIAL: INTEROPERABILIDAD CON BANCO 0005 ---
+            if codigo_banco_destino in ["0005", "BANCO_5"]:
+                url_destino = "https://api.banprofi.site/api/pagos/banco"
+            
             payload_banco = {
                 "numero_transaccion": str(data['numero_transaccion']),
                 "codigo_banco_emisor_tarjeta": str(data['codigo_banco_emisor_tarjeta']),
