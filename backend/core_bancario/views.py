@@ -346,8 +346,10 @@ class AutorizarPagoBancoView(APIView):
         if Transaccion.objects.filter(referencia_externa=data['numero_transaccion']).exists():
             return Response({"message": "Transacción autorizada exitosamente"}, status=status.HTTP_201_CREATED)
 
+        numero_tarjeta_limpio = data.get('numero_tarjeta', '').replace(' ', '')
+
         try:
-            tarjeta = Tarjeta.objects.get(numero=data['numero_tarjeta'])
+            tarjeta = Tarjeta.objects.get(numero=numero_tarjeta_limpio)
             if not tarjeta.estado:
                  return error_response("IERROR_1003", "Tarjeta inoperativa.")
             if tarjeta.cvv != data['cvc_tarjeta']:
