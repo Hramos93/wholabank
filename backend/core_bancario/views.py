@@ -273,7 +273,10 @@ class ProcesarPagoComercioView(APIView):
                 "monto_pagado": float(data['monto_pagado']),
             }
             
-            headers = {"Content-Type": "application/json"}
+            headers = {
+                "Content-Type": "application/json",
+                "X-API-KEY": settings.INTERBANK_API_KEY or "" # Enviamos nuestra llave para que el otro banco nos reconozca
+            }
             
             try:
                 response = requests.post(url_destino, json=payload_banco, headers=headers, timeout=15)
