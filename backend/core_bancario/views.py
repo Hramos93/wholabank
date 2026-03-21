@@ -119,7 +119,7 @@ class ClaimBonusView(APIView):
     def post(self, request):
         try:
             # 1. Importación local a prueba de fallos (Garantiza que Decimal exista)
-            
+            from decimal import Decimal
 
             # 2. Validación: ¿El usuario actual es un cliente o es el superadmin?
             if not hasattr(request.user, 'cliente'):
@@ -138,9 +138,9 @@ class ClaimBonusView(APIView):
                 return Response({"error": "No se encontró una cuenta bancaria activa."}, status=status.HTTP_404_NOT_FOUND)
 
             with transaction.atomic():
-                
+                bono_monto = Decimal('1000.00')
 
-                cuenta_a_creditar.saldo += Decimal('1000.00')
+                cuenta_a_creditar.saldo += bono_monto
                 cuenta_a_creditar.save()
                 
                 cliente.bono_reclamado = True
@@ -148,7 +148,7 @@ class ClaimBonusView(APIView):
 
                 Transaccion.objects.create(
                     tipo='TRANSFERENCIA', 
-                    monto='1000.00', 
+                    monto=bono_monto, 
                     cuenta_destino=cuenta_a_creditar,
                     estado='APROBADO', 
                     codigo_respuesta='00', 
@@ -273,10 +273,14 @@ class ProcesarPagoComercioView(APIView):
                 "monto_pagado": float(data['monto_pagado']),
             }
             
-            headers = {
-                "Content-Type": "application/json",
-                "X-API-KEY": settings.INTERBANK_API_KEY or "" # Enviamos nuestra llave para que el otro banco nos reconozca
-            }
+            headers = {"Content-Type": "application/json"}
+            
+            # --- CASO ESPECIAL: INTEROPERABILIDAD CON BANCO 0002 ---
+            if codigo_banco_destino in ["0002", "BANCO_2"]:
+                token_banco_2 = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt2Ymd0amJ4eWNxYXFjeW1iZHlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ2OTg3NTMsImV4cCI6MjA4MDI3NDc1M30.jJ4yRilhpAPHjkNNWNEjI1IHA7ml6-"
+                headers["Authorization"] = f"Bearer {token_banco_2}"
+                # Supabase requiere adicionalmente este header en la mayoría de sus configuraciones
+                headers["apikey"] = token_banco_2
             
             try:
                 response = requests.post(url_destino, json=payload_banco, headers=headers, timeout=15)
