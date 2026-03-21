@@ -266,14 +266,18 @@ class ProcesarPagoComercioView(APIView):
             if codigo_banco_destino in ["0005", "BANCO_5"]:
                 url_destino = "https://api.banprofi.site/api/pagos/banco"
             
+            # Aplicamos la traducción global de bancos
+            banco_emisor = str(data.get('codigo_banco_emisor_tarjeta', ''))
+            banco_receptor = str(data.get('codigo_banco_comercio_receptor', ''))
+            
             payload_banco = {
                 "numero_transaccion": str(data['numero_transaccion']),
-                "codigo_banco_emisor_tarjeta": str(data['codigo_banco_emisor_tarjeta']),
+                "codigo_banco_emisor_tarjeta": FORMATO_EXTERNO_BANCOS.get(banco_emisor, banco_emisor),
                 "numero_tarjeta": str(data['numero_tarjeta']),
                 "cvc_tarjeta": str(data['cvc_tarjeta']),
                 "fecha_vencimiento_tarjeta": str(data['fecha_vencimiento_tarjeta']),
-                "codigo_banco_comercio_receptor": str(data['codigo_banco_comercio_receptor']),
-                "numero_cuenta_comercio_receptor": str(comercio.cuenta.numero_cuenta),
+                "codigo_banco_comercio_receptor": FORMATO_EXTERNO_BANCOS.get(banco_receptor, banco_receptor),
+                "numero_cuenta_comercio_receptor": str(comercio.codigo_identificador), # Ahora enviamos "COMERCIO_3" en lugar de la cuenta interna de 20 dígitos
                 "monto_pagado": float(data['monto_pagado']),
             }
             
