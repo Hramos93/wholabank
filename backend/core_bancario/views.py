@@ -296,7 +296,7 @@ class ProcesarPagoComercioView(APIView):
             
             # --- CASO ESPECIAL: INTEROPERABILIDAD CON BANCO 0002 ---
             if codigo_banco_destino in ["0002", "BANCO_2"]:
-                token_banco_2 = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt2Ymd0amJ4eWNxYXFjeW1iZHlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ2OTg3NTMsImV4cCI6MjA4MDI3NDc1M30.jJ4yRilhpAPHjkNNWNEjI1IHA7ml6-"
+                token_banco_2 = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt2Ymd0amJ4eWNxYXFjeW1iZHlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ2OTg3NTMsImV4cCI6MjA4MDI3NDc1M30.jJ4yRilhpAPHjkNNWNEjI1IHA7ml6-bSjM6CTdxcl-w"
                 headers["Authorization"] = f"Bearer {token_banco_2}"
                 # Supabase requiere adicionalmente este header en la mayoría de sus configuraciones
                 headers["apikey"] = token_banco_2
