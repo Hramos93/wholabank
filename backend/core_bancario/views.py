@@ -296,7 +296,15 @@ class ProcesarPagoComercioView(APIView):
                         )
                     return Response({"message": "Pago aprobado por banco externo"}, status=status.HTTP_201_CREATED)
                 
-                return error_response("IERROR_1002", "Transacción declinada por el banco emisor.", http_status=status.HTTP_402_PAYMENT_REQUIRED)
+                # --- MEJORA PARA DEPURACIÓN B2B ---
+                # Si el banco responde algo distinto a 201, capturamos su mensaje exacto
+                try:
+                    detalle_banco = response.json()
+                except Exception:
+                    detalle_banco = response.text
+                
+                mensaje_rechazo = f"Transacción declinada por el banco emisor. Detalle: {detalle_banco}"
+                return error_response("IERROR_1002", mensaje_rechazo, http_status=status.HTTP_402_PAYMENT_REQUIRED)
             except requests.exceptions.RequestException:
                 return error_response("IERROR_1002", "Timeout conectando con banco emisor.")
         except Directorio.DoesNotExist:
