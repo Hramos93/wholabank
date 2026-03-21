@@ -277,7 +277,10 @@ class ProcesarPagoComercioView(APIView):
                 "monto_pagado": float(data['monto_pagado']),
             }
             
-            headers = {"Content-Type": "application/json"}
+            headers = {
+                "Content-Type": "application/json",
+                "Accept": "application/json"  # <--- FUERZA A QUE EL OTRO BANCO RESPONDA EN JSON
+            }
             
             # --- CASO ESPECIAL: INTEROPERABILIDAD CON BANCO 0002 ---
             if codigo_banco_destino in ["0002", "BANCO_2"]:
