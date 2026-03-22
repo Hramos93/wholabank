@@ -8,6 +8,7 @@ import Register from './pages/Register'; // Importamos la nueva página
 import AdminPanel from './pages/AdminPanel'; // ruta de administración
 import RegisterBank from './pages/RegisterBank';
 import AcercaDe from './pages/AcercaDe';
+import Movimientos from './pages/Movimientos';
 
 
 function App() {
@@ -27,6 +28,7 @@ function App() {
         {/* Rutas Privadas / Aplicativos */}
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/pos" element={<POS />} />
+        <Route path="/movimientos" element={<Movimientos />} />
 
        {/* Ruta de administración */}
       <Route path="/admin" element={<AdminPanel />} />

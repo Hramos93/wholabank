@@ -28,10 +28,11 @@ class TransaccionSerializer(serializers.Serializer):
     # Campos personalizados para mejorar la experiencia en el frontend
     direccion = serializers.SerializerMethodField()
     descripcion = serializers.SerializerMethodField()
+    detalle_contraparte = serializers.SerializerMethodField()
     
     class Meta:
         model = Transaccion
-        fields = ['id', 'tipo', 'monto', 'fecha', 'estado', 'direccion', 'descripcion']
+        fields = ['id', 'tipo', 'monto', 'fecha', 'estado', 'direccion', 'descripcion', 'detalle_contraparte']
 
     def get_direccion(self, obj):
         """ Determina si la transacción es 'ENTRANTE' o 'SALIENTE' para el usuario. """
@@ -58,6 +59,25 @@ class TransaccionSerializer(serializers.Serializer):
              return "Bono de Bienvenida"
         return "Movimiento genérico"
 
+    def get_detalle_contraparte(self, obj):
+        """ Obtiene el origen o destino exacto de la transacción para mostrarlo al usuario """
+        direccion = self.get_direccion(obj)
+        if direccion == 'ENTRANTE':
+            if obj.cuenta_origen:
+                if hasattr(obj.cuenta_origen, 'perfil_comercio'):
+                    return f"De: {obj.cuenta_origen.perfil_comercio.nombre}"
+                return f"De: Cta. {obj.cuenta_origen.numero_cuenta[-6:]}"
+            return "Ingreso / Abono"
+        elif direccion == 'SALIENTE':
+            if obj.cuenta_destino:
+                if hasattr(obj.cuenta_destino, 'perfil_comercio'):
+                    return f"Pagado a: {obj.cuenta_destino.perfil_comercio.nombre}"
+                return f"Transferido a: Cta. {obj.cuenta_destino.numero_cuenta[-6:]}"
+            # Si es un pago hacia otro banco (donde no tenemos el nombre en BD local)
+            if obj.mensaje_error and "comercio" in obj.mensaje_error.lower():
+                return f"Pagado a: {obj.mensaje_error.replace('Aprobado para comercio:', '').strip()}"
+            return "Pago Externo (Interbancario)"
+        return "-"
 
 class CuentaSerializer(serializers.ModelSerializer):
     tarjetas = TarjetaSerializer(many=True, read_only=True)
