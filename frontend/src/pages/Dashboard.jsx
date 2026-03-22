@@ -115,7 +115,9 @@ const Dashboard = () => {
                                 <h3 className="text-gray-600 font-bold text-sm ml-1">Tarjetas Asociadas</h3>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     {cuenta.tarjetas.map((t) => (
-                                        <div key={t.numero} className="relative h-48 rounded-2xl shadow-xl overflow-hidden text-white transition-transform hover:-translate-y-1 duration-300">
+                                        <div key={t.numero} className="flex flex-col gap-3">
+                                            {/* --- TARJETA GRÁFICA --- */}
+                                            <div className="relative h-48 rounded-2xl shadow-xl overflow-hidden text-white transition-transform hover:-translate-y-1 duration-300">
                                             {/* Fondo Gradiente estilo Visa/Mastercard */}
                                             <div className="absolute inset-0 bg-gradient-to-br from-blue-900 via-blue-800 to-blue-600"></div>
                                             
@@ -137,9 +139,14 @@ const Dashboard = () => {
                                                 </div>
 
                                                 <div className="space-y-4">
-                                                    <p className="font-mono text-xl tracking-widest shadow-black drop-shadow-md">
-                                                        {t.numero.match(/.{1,4}/g).join(' ')}
-                                                    </p>
+                                                    <div>
+                                                        <p className="font-mono text-xl tracking-widest shadow-black drop-shadow-md">
+                                                            {t.numero.match(/.{1,4}/g).join(' ')}
+                                                        </p>
+                                                        <p className="text-sm mt-1 text-cyan-300 font-semibold tracking-wide shadow-black drop-shadow-md">
+                                                            Disponible: Bs. {t.saldo_disponible}
+                                                        </p>
+                                                    </div>
                                                     <div className="flex justify-between text-xs font-mono uppercase text-blue-100">
                                                         <div>
                                                             <span className="block text-[10px] opacity-70">Vence</span>
@@ -149,6 +156,25 @@ const Dashboard = () => {
                                                             <span className="block text-[10px] opacity-70">CVC</span>
                                                             <CvvDisplay cvv={t.cvv} />
                                                         </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            </div>
+
+                                            {/* --- DETALLES DE DEUDA Y FECHAS --- */}
+                                            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 text-sm">
+                                                <div className="flex justify-between items-center border-b border-gray-50 pb-2 mb-2">
+                                                    <span className="text-gray-500 font-medium">Deuda Actual:</span>
+                                                    <span className={`font-bold ${t.deuda > 0 ? 'text-red-500' : 'text-green-500'}`}>Bs. {t.deuda}</span>
+                                                </div>
+                                                <div className="flex justify-between text-xs">
+                                                    <div>
+                                                        <span className="block text-gray-400 mb-0.5">Fecha de corte</span>
+                                                        <span className="font-semibold text-gray-700">{t.fecha_corte}</span>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <span className="block text-gray-400 mb-0.5">Límite de pago</span>
+                                                        <span className="font-semibold text-gray-700">{t.fecha_pago}</span>
                                                     </div>
                                                 </div>
                                             </div>
