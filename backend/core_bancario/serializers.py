@@ -197,7 +197,7 @@ class RegistroClienteSerializer(serializers.Serializer):
 # Serializador para el CASO 2: Banco Adquiriente -> Banco Emisor (Nosotros)
 class AutorizacionBancoSerializer(serializers.Serializer):
     numero_transaccion = serializers.CharField()
-    codigo_banco_emisor_tarjeta = serializers.CharField()
+    codigo_banco_emisor_tarjeta = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     numero_tarjeta = serializers.CharField()
     cvc_tarjeta = serializers.CharField()
     fecha_vencimiento_tarjeta = serializers.CharField()

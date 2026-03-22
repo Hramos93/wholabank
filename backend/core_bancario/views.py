@@ -213,10 +213,15 @@ class ProcesarPagoComercioView(APIView):
         except Comercio.DoesNotExist:
             return error_response("IERROR_1001", "Error: Comercio no encontrado.", status.HTTP_404_NOT_FOUND)
 
-        # Determinar el banco emisor de la tarjeta usando el BIN (primeros 5 dígitos)
-        # Priorizamos el BIN de la tarjeta, pero permitimos que el JSON lo sugiera si es consistente.
-        bin_tarjeta = numero_tarjeta_limpio[:len(settings.MI_BIN_TARJETA)] # Usar la longitud del BIN de settings
-        banco_emisor_code = MAPEO_BANCOS.get(bin_tarjeta, bin_tarjeta)
+        # --- INTELIGENCIA DE ENRUTAMIENTO POR BIN (NUEVO ESTÁNDAR) ---
+        # Extraemos los primeros 4 dígitos de la tarjeta entrante
+        bin_tarjeta = numero_tarjeta_limpio[:4]
+        bin_local = getattr(settings, 'MI_BIN_TARJETA', '0001')[:4]
+        
+        if bin_tarjeta == bin_local:
+            banco_emisor_code = MI_BANCO_DEFAULT # Si los 4 dígitos son nuestros, es "On-Us"
+        else:
+            banco_emisor_code = MAPEO_BANCOS.get(bin_tarjeta, bin_tarjeta) # Si no, mapeamos al banco externo
 
         # Si el JSON proporciona un código de banco emisor, lo usamos si es válido.
         if data.get('codigo_banco_emisor_tarjeta'):
@@ -275,12 +280,10 @@ class ProcesarPagoComercioView(APIView):
                 url_destino = "https://api.banprofi.site/api/pagos/banco"
             
             # Aplicamos la traducción global de bancos
-            banco_emisor = str(data.get('codigo_banco_emisor_tarjeta', ''))
             banco_receptor = str(data.get('codigo_banco_comercio_receptor', ''))
             
             payload_banco = {
                 "numero_transaccion": str(data['numero_transaccion']),
-                "codigo_banco_emisor_tarjeta": FORMATO_EXTERNO_BANCOS.get(banco_emisor, banco_emisor),
                 "numero_tarjeta": str(data['numero_tarjeta']),
                 "cvc_tarjeta": str(data['cvc_tarjeta']),
                 "fecha_vencimiento_tarjeta": str(data['fecha_vencimiento_tarjeta']),
