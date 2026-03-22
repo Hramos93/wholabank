@@ -8,10 +8,23 @@ from .models import Comercio
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 class TarjetaSerializer(serializers.ModelSerializer):
+    deuda = serializers.SerializerMethodField()
+    fecha_corte = serializers.SerializerMethodField()
+    fecha_pago = serializers.SerializerMethodField()
+
     class Meta:
         model = Tarjeta
         # Solo enviamos campos necesarios al frontend, ocultamos IDs internos si no son necesarios
-        fields = ['numero', 'fecha_vencimiento', 'cvv', 'estado']
+        fields = ['numero', 'fecha_vencimiento', 'cvv', 'estado', 'saldo_disponible', 'limite_credito', 'deuda', 'fecha_corte', 'fecha_pago']
+
+    def get_deuda(self, obj):
+        return obj.limite_credito - obj.saldo_disponible
+        
+    def get_fecha_corte(self, obj):
+        return f"{obj.dia_corte} de cada mes"
+
+    def get_fecha_pago(self, obj):
+        return f"{obj.dia_pago} del prox. mes"
 
 class TransaccionSerializer(serializers.Serializer):
     """

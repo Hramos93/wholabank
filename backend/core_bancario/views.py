@@ -245,12 +245,12 @@ class ProcesarPagoComercioView(APIView):
             cuenta_cliente = tarjeta.cuenta
             if tarjeta.cvv != data['cvc_tarjeta']:
                  return error_response("IERROR_1005", "CVV inválido.")
-            if cuenta_cliente.saldo < data['monto_pagado']:
-                return error_response("IERROR_1004", "Saldo insuficiente.")
+            if tarjeta.saldo_disponible < data['monto_pagado']:
+                return error_response("IERROR_1004", "Límite de tarjeta insuficiente.")
 
             with transaction.atomic():
-                cuenta_cliente.saldo -= data['monto_pagado']
-                cuenta_cliente.save()
+                tarjeta.saldo_disponible -= Decimal(str(data['monto_pagado']))
+                tarjeta.save()
                 
                 comercio.cuenta.saldo += data['monto_pagado']
                 comercio.cuenta.save()
@@ -359,12 +359,12 @@ class AutorizarPagoBancoView(APIView):
                 return error_response("IERROR_1005", "CVV inválido.")
             
             cuenta = tarjeta.cuenta
-            if cuenta.saldo < data['monto_pagado']:
+            if tarjeta.saldo_disponible < data['monto_pagado']:
                  return error_response("IERROR_1004", "Límite de crédito sobrepasado.")
             
             with transaction.atomic():
-                cuenta.saldo -= data['monto_pagado']
-                cuenta.save()
+                tarjeta.saldo_disponible -= Decimal(str(data['monto_pagado']))
+                tarjeta.save()
                 Transaccion.objects.create(
                     tipo='PAGO_INTERBANCARIO', monto=data['monto_pagado'], cuenta_origen=cuenta,
                     estado='APROBADO', codigo_respuesta='201', banco_emisor_id=MI_BANCO_DEFAULT,

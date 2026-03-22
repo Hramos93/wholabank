@@ -85,6 +85,10 @@ class Tarjeta(models.Model):
     cvv = models.CharField(max_length=3, editable=False)
     fecha_vencimiento = models.CharField(max_length=5, editable=False) # MM/YY
     estado = models.BooleanField(default=True)
+    saldo_disponible = models.DecimalField(max_digits=15, decimal_places=2, default=10000.00) # Límite de la TC
+    limite_credito = models.DecimalField(max_digits=15, decimal_places=2, default=10000.00) # Límite total
+    dia_corte = models.IntegerField(default=15, help_text="Día del mes en que cierra la facturación")
+    dia_pago = models.IntegerField(default=5, help_text="Día del mes límite para pagar")
 
     def save(self, *args, **kwargs):
         if not self.numero:
