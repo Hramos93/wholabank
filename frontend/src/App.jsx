@@ -7,6 +7,7 @@ import POS from './pages/POS';
 import Register from './pages/Register'; // Importamos la nueva página
 import AdminPanel from './pages/AdminPanel'; // ruta de administración
 import RegisterBank from './pages/RegisterBank';
+import AcercaDe from './pages/AcercaDe';
 
 
 function App() {
@@ -15,6 +16,9 @@ function App() {
       <Routes>
         {/* Página Principal Pública */}
         <Route path="/" element={<Home />} />
+        
+        {/* Páginas Informativas */}
+        <Route path="/acerca-de" element={<AcercaDe />} />
         
         {/* Autenticación y Registro */}
         <Route path="/login" element={<Login />} />
@@ -35,6 +39,3 @@ function App() {
 }
 
 export default App;
-
-
-

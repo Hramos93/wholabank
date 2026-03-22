@@ -52,6 +52,12 @@ const Home = () => {
                 >
                   Empresas
                 </button>
+                <button
+                  onClick={() => navigate('/acerca-de')}
+                  className="px-5 py-2 text-sm font-bold rounded-md transition-all text-gray-500 hover:text-blue-900"
+                >
+                  Nosotros
+                </button>
               </div>
             </div>
 
@@ -135,13 +141,13 @@ const Home = () => {
 
             {/* Menú de Navegación Lateral */}
             <nav className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                <NavItem icon={<CreditCard size={20}/>} text="Productos" />
+                <NavItem icon={<CreditCard size={20}/>} text="Productos" onClick={() => {}} />
                 <div className="h-px bg-gray-100 mx-4"></div>
-                <NavItem icon={<Smartphone size={20}/>} text="Servicios Digitales" />
+                <NavItem icon={<Smartphone size={20}/>} text="Servicios Digitales" onClick={() => {}} />
                 <div className="h-px bg-gray-100 mx-4"></div>
-                <NavItem icon={<BookOpen size={20}/>} text="Conoce Whola" />
+                <NavItem icon={<BookOpen size={20}/>} text="Conoce Whola" onClick={() => navigate('/acerca-de')} />
                 <div className="h-px bg-gray-100 mx-4"></div>
-                <NavItem icon={<Info size={20}/>} text="Información y Ayuda" />
+                <NavItem icon={<Info size={20}/>} text="Información y Ayuda" onClick={() => {}} />
             </nav>
           </aside>
 
@@ -227,8 +233,8 @@ const Home = () => {
   );
 };
 
-const NavItem = ({ icon, text }) => (
-    <div className="flex items-center gap-4 px-5 py-4 text-gray-600 hover:text-blue-900 hover:bg-blue-50 cursor-pointer transition-colors group">
+const NavItem = ({ icon, text, onClick }) => (
+    <div onClick={onClick} className="flex items-center gap-4 px-5 py-4 text-gray-600 hover:text-blue-900 hover:bg-blue-50 cursor-pointer transition-colors group">
         <span className="text-gray-400 group-hover:text-blue-900 transition-colors">{icon}</span>
         <span className="font-semibold text-sm">{text}</span>
         <ChevronRight size={16} className="ml-auto opacity-0 group-hover:opacity-100 text-blue-900 transition-all transform -translate-x-2 group-hover:translate-x-0" />
