@@ -143,9 +143,6 @@ const Dashboard = () => {
                                                         <p className="font-mono text-xl tracking-widest shadow-black drop-shadow-md">
                                                             {t.numero.match(/.{1,4}/g).join(' ')}
                                                         </p>
-                                                        <p className="text-sm mt-1 text-cyan-300 font-semibold tracking-wide shadow-black drop-shadow-md">
-                                                            Disponible: Bs. {t.saldo_disponible}
-                                                        </p>
                                                     </div>
                                                     <div className="flex justify-between text-xs font-mono uppercase text-blue-100">
                                                         <div>
@@ -163,6 +160,14 @@ const Dashboard = () => {
 
                                             {/* --- DETALLES DE DEUDA Y FECHAS --- */}
                                             <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 text-sm">
+                                                <div className="flex justify-between items-center border-b border-gray-50 pb-2 mb-2">
+                                                    <span className="text-gray-500 font-medium">Límite Aprobado:</span>
+                                                    <span className="font-bold text-gray-700">Bs. {t.limite_credito}</span>
+                                                </div>
+                                                <div className="flex justify-between items-center border-b border-gray-50 pb-2 mb-2">
+                                                    <span className="text-gray-500 font-medium">Saldo Disponible:</span>
+                                                    <span className="font-bold text-blue-600 text-base">Bs. {t.saldo_disponible}</span>
+                                                </div>
                                                 <div className="flex justify-between items-center border-b border-gray-50 pb-2 mb-2">
                                                     <span className="text-gray-500 font-medium">Deuda Actual:</span>
                                                     <span className={`font-bold ${t.deuda > 0 ? 'text-red-500' : 'text-green-500'}`}>Bs. {t.deuda}</span>
