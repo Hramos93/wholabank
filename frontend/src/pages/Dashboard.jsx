@@ -174,12 +174,12 @@ const Dashboard = () => {
 
                                                 <div className="flex justify-between items-end mb-6">
                                                     <div>
-                                                        <p className="text-gray-400 text-xs mb-1">Saldo Disponible</p>
-                                                        <p className="text-2xl font-bold text-blue-900">Bs. {t.saldo_disponible}</p>
+                                                        <p className="text-gray-400 text-xs mb-1">Deuda Actual</p>
+                                                        <p className={`text-xl font-bold ${t.deuda > 0 ? 'text-red-500' : 'text-green-600'}`}>Bs. {t.deuda}</p>
                                                     </div>
                                                     <div className="text-right">
-                                                        <p className="text-gray-400 text-xs mb-1">Deuda Actual</p>
-                                                        <p className={`text-2xl font-bold ${t.deuda > 0 ? 'text-red-500' : 'text-green-600'}`}>Bs. {t.deuda}</p>
+                                                        <p className="text-gray-400 text-xs mb-1">Saldo Disponible</p>
+                                                        <p className="text-3xl font-bold text-blue-900">Bs. {t.saldo_disponible}</p>
                                                     </div>
                                                 </div>
 
@@ -227,10 +227,10 @@ const Dashboard = () => {
                         <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
                             <h3 className="text-gray-800 font-bold mb-4">Operaciones Rápidas</h3>
                             <div className="grid grid-cols-2 gap-4">
-                                <QuickAction icon={<ArrowUpRight size={20}/>} text="Transferir" color="bg-cyan-100 text-cyan-700" />
-                                <QuickAction icon={<CreditCard size={20}/>} text="Pagar TC" color="bg-orange-100 text-orange-700" />
-                                <QuickAction icon={<DollarSign size={20}/>} text="Pago Móvil" color="bg-green-100 text-green-700" />
-                                <QuickAction icon={<Activity size={20}/>} text="Movimientos" color="bg-purple-100 text-purple-700" />
+                                <QuickAction onClick={() => {}} icon={<ArrowUpRight size={20}/>} text="Transferir" color="bg-cyan-100 text-cyan-700" />
+                                <QuickAction onClick={() => {}} icon={<CreditCard size={20}/>} text="Pagar TC" color="bg-orange-100 text-orange-700" />
+                                <QuickAction onClick={() => {}} icon={<DollarSign size={20}/>} text="Pago Móvil" color="bg-green-100 text-green-700" />
+                                <QuickAction onClick={() => navigate('/movimientos')} icon={<Activity size={20}/>} text="Movimientos" color="bg-purple-100 text-purple-700" />
                             </div>
                         </div>
 
@@ -252,8 +252,8 @@ const Dashboard = () => {
 };
 
 // Componente pequeño para botones de acción rápida
-const QuickAction = ({ icon, text, color }) => (
-    <button className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl border border-gray-100 hover:bg-gray-50 hover:border-gray-200 transition-all active:scale-95 group">
+const QuickAction = ({ icon, text, color, onClick }) => (
+    <button onClick={onClick} className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl border border-gray-100 hover:bg-gray-50 hover:border-gray-200 transition-all active:scale-95 group">
         <div className={`p-3 rounded-full ${color} group-hover:scale-110 transition-transform`}>
             {icon}
         </div>
