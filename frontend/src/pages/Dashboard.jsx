@@ -158,27 +158,38 @@ const Dashboard = () => {
                                             </div>
                                             </div>
 
-                                            {/* --- DETALLES DE DEUDA Y FECHAS --- */}
-                                            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 text-sm">
-                                                <div className="flex justify-between items-center border-b border-gray-50 pb-2 mb-2">
-                                                    <span className="text-gray-500 font-medium">Límite Aprobado:</span>
-                                                    <span className="font-bold text-gray-700">Bs. {t.limite_credito}</span>
-                                                </div>
-                                                <div className="flex justify-between items-center border-b border-gray-50 pb-2 mb-2">
-                                                    <span className="text-gray-500 font-medium">Saldo Disponible:</span>
-                                                    <span className="font-bold text-blue-600 text-base">Bs. {t.saldo_disponible}</span>
-                                                </div>
-                                                <div className="flex justify-between items-center border-b border-gray-50 pb-2 mb-2">
-                                                    <span className="text-gray-500 font-medium">Deuda Actual:</span>
-                                                    <span className={`font-bold ${t.deuda > 0 ? 'text-red-500' : 'text-green-500'}`}>Bs. {t.deuda}</span>
-                                                </div>
-                                                <div className="flex justify-between text-xs">
+                                            {/* --- FORMATO REPLICADO: SALDO Y DEUDA DE TC --- */}
+                                            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
+                                                <div className="flex items-center gap-4 w-full mb-6">
+                                                    <div className="p-3 rounded-full bg-orange-100 text-orange-900">
+                                                        <CreditCard size={24} />
+                                                    </div>
                                                     <div>
-                                                        <span className="block text-gray-400 mb-0.5">Fecha de corte</span>
+                                                        <p className="text-gray-500 text-xs font-bold uppercase tracking-wider">
+                                                            Tarjeta de Crédito
+                                                        </p>
+                                                        <p className="text-gray-800 font-mono text-sm">Límite: Bs. {t.limite_credito}</p>
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex justify-between items-end mb-6">
+                                                    <div>
+                                                        <p className="text-gray-400 text-xs mb-1">Saldo Disponible</p>
+                                                        <p className="text-2xl font-bold text-blue-900">Bs. {t.saldo_disponible}</p>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <p className="text-gray-400 text-xs mb-1">Deuda Actual</p>
+                                                        <p className={`text-2xl font-bold ${t.deuda > 0 ? 'text-red-500' : 'text-green-600'}`}>Bs. {t.deuda}</p>
+                                                    </div>
+                                                </div>
+
+                                                <div className="bg-slate-50 p-3 rounded-xl flex justify-between text-xs border border-gray-100">
+                                                    <div>
+                                                        <span className="block text-gray-400 mb-0.5">Corte</span>
                                                         <span className="font-semibold text-gray-700">{t.fecha_corte}</span>
                                                     </div>
                                                     <div className="text-right">
-                                                        <span className="block text-gray-400 mb-0.5">Límite de pago</span>
+                                                        <span className="block text-gray-400 mb-0.5">Pago</span>
                                                         <span className="font-semibold text-gray-700">{t.fecha_pago}</span>
                                                     </div>
                                                 </div>
